@@ -18,25 +18,16 @@ El sistema utiliza una **arquitectura de tres capas** con separación clara de r
 ### 2.2 Stack tecnológico propuesto
 
 **Frontend:**
-- React / Vue.js / Angular (framework SPA)
-- TailwindCSS / Bootstrap (estilos)
-- Axios / Fetch API (comunicación HTTP)
-- React Query / SWR (caché y estado del servidor)
+- React 
 
 **Backend:**
-- Node.js + Express / Python + FastAPI / Java + Spring Boot
-- ORM: Sequelize / TypeORM / SQLAlchemy / JPA
-- Autenticación: JWT (opcional)
-- Validación: Joi / Zod / Pydantic
+- laravel
 
 **Base de datos:**
-- PostgreSQL / MySQL (base de datos relacional principal)
-- Redis (caché y control de concurrencia, opcional)
+- MySQL 
 
 **Despliegue (opcional):**
-- Frontend: Vercel / Netlify / Azure Static Web Apps
-- Backend: Render / Railway / Azure App Service
-- Base de datos: Neon / PlanetScale / Azure Database
+
 
 ## 3. Diagrama de arquitectura de alto nivel
 
