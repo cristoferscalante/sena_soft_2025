@@ -176,6 +176,62 @@ erDiagram
     PASAJERO ||--o{ TIQUETE : "posee"
 ```
 
+## Diagrama de relaciones (Mermaid)
+
+A continuación se incluye un diagrama Mermaid más visual con las relaciones principales entre tablas, para que pueda ser renderizado directamente en Markdown compatible con Mermaid.
+
+```mermaid
+graph LR
+        CIUDAD --> AEROPUERTO
+        CIUDAD --> VUELO_ORIGEN["VUELO (origen)"]
+        CIUDAD --> VUELO_DESTINO["VUELO (destino)"]
+        MODELO_AERONAVE --> AERONAVE
+        AERONAVE --> VUELO
+        VUELO --> ASIENTO
+        RESERVA --> RESERVA_VUELO
+        RESERVA --> PASAJERO
+        RESERVA --> PAGO
+        RESERVA --> TIQUETE
+        PAGADOR --> RESERVA
+        ASIENTO --> PASAJERO_ASIENTO
+        PASAJERO --> PASAJERO_ASIENTO
+        ASIENTO --> TIQUETE
+        PASAJERO --> TIQUETE
+
+        subgraph "Entidades Principales"
+            CIUDAD[CIUDAD]
+            AEROPUERTO[AEROPUERTO]
+            MODELO_AERONAVE[MODELO_AERONAVE]
+            AERONAVE[AERONAVE]
+            VUELO[VUELO]
+            ASIENTO[ASIENTO]
+            RESERVA[RESERVA]
+            RESERVA_VUELO[RESERVA_VUELO]
+            PAGADOR[PAGADOR]
+            PASAJERO[PASAJERO]
+            PASAJERO_ASIENTO[PASAJERO_ASIENTO]
+            PAGO[PAGO]
+            TIQUETE[TIQUETE]
+        end
+
+        %% notas de relación
+        CIUDAD ---|"1..*"| AEROPUERTO
+        CIUDAD ---|"1..*"| VUELO_ORIGEN
+        CIUDAD ---|"1..*"| VUELO_DESTINO
+        MODELO_AERONAVE ---|"1..*"| AERONAVE
+        AERONAVE ---|"1..*"| VUELO
+        VUELO ---|"1..*"| ASIENTO
+        RESERVA ---|"1..*"| RESERVA_VUELO
+        RESERVA ---|"1..*"| PASAJERO
+        RESERVA ---|"1..*"| PAGO
+        RESERVA ---|"1..*"| TIQUETE
+        PAGADOR ---|"1..*"| RESERVA
+        ASIENTO ---|"0..1"| PASAJERO_ASIENTO
+        PASAJERO ---|"0..*"| PASAJERO_ASIENTO
+        ASIENTO ---|"0..1"| TIQUETE
+        PASAJERO ---|"0..*"| TIQUETE
+```
+
 ## 3. Definición detallada de tablas
 
 ### 3.1 Tabla: `ciudades`
