@@ -1,11 +1,29 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# SENASOFT 2025 - Sistema de Compra de Tiquetes Aéreos
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Sistema web para la compra de tiquetes aéreos desarrollado para el reto SENASOFT 2025. Implementa búsqueda de vuelos, selección de asientos con control de concurrencia, registro de pasajeros y simulación de pagos.
+
+## 📋 Documentación de Planeación
+
+Toda la documentación del análisis, arquitectura y diseño se encuentra en la carpeta **`doc/`**:
+
+- **[`doc/analisis.md`](doc/analisis.md)** - Análisis completo de requerimientos, casos de uso, modelo de datos y plan de trabajo
+- **[`doc/arquitectura_diagrama.md`](doc/arquitectura_diagrama.md)** - Arquitectura del sistema con Laravel + Inertia.js + React + MySQL, diagramas de componentes, flujos y estrategias de concurrencia
+- **[`doc/diseño_bd.md`](doc/diseño_bd.md)** - Diseño de base de datos con diagramas ER, DDL, triggers, stored procedures y seeders
+- **[`doc/diagrama_flujo.md`](doc/diagrama_flujo.md)** - Diagramas de flujo detallados de todas las operaciones del sistema
+
+## 🎨 Diseño UI/UX
+
+El diseño visual y los prototipos están disponibles en Figma:
+- **[Ver diseño en Figma](https://www.figma.com/design/hpyIWr8aYFubmDp60K2nGr/senasoft?node-id=1-2&p=f&t=P1PariLdVzows3WK-0)**
+
+## 🚀 Stack Tecnológico
+
+- **Frontend:** React 18+ con Inertia.js client, TailwindCSS
+- **Backend:** Laravel 10+ (monolítico) con Inertia.js server adapter
+- **Base de datos:** MySQL 8.0+
+- **Caché/Queues:** Redis (opcional)
+- **Build tool:** Vite
+- **Control de versiones:** Git con GitFlow
 
 ## About Laravel
 

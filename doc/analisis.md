@@ -2,6 +2,23 @@
 
 Documento: versión 1.0  •  Fecha: 2025-10-21
 
+---
+
+## 🎨 Diseño UI/UX
+
+El diseño visual completo, prototipos y especificaciones de interfaz están disponibles en Figma:
+
+**[Ver diseño en Figma →](https://www.figma.com/design/hpyIWr8aYFubmDp60K2nGr/senasoft?node-id=1-2&p=f&t=P1PariLdVzows3WK-0)**
+
+El diseño incluye:
+- Wireframes y mockups de alta fidelidad
+- Flujos de usuario completos (búsqueda → selección → pago → confirmación)
+- Sistema de diseño (colores, tipografía, componentes)
+- Estados de UI (loading, error, success)
+- Versiones responsive (desktop, tablet, mobile)
+
+---
+
 ## 1. Resumen ejecutivo
 Se requiere diseñar e implementar una aplicación web para la compra de tiquetes aéreos que gestione vuelos, asientos, pasajeros y pagos simulados. El sistema debe garantizar integridad de datos y control de concurrencia, evitando venta doble de asientos y respetando la capacidad definida por el modelo de avión. Se evaluará arquitectura, buenas prácticas, control de versiones (GitFlow) y experiencia de usuario; el despliegue es opcional con puntaje adicional.
 
