@@ -1,0 +1,146 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Services\PaymentService;
+use App\Services\BookingService;
+use App\Services\TicketService;
+use Illuminate\Http\Request;
+use Inertia\Inertia;
+use Inertia\Response;
+use Illuminate\Http\RedirectResponse;
+
+class PaymentController extends Controller
+{
+    public function __construct(
+        protected PaymentService $paymentService,
+        protected BookingService $bookingService,
+        protected TicketService $ticketService
+    ) {}
+
+    /**
+     * Mostrar página de pago
+     */
+    public function create(int $reserva): Response
+    {
+        $reservaData = $this->bookingService->obtenerResumenReserva($reserva);
+
+        return Inertia::render('Payment/Simulate', [
+            'reserva' => $reservaData,
+        ]);
+    }
+
+    /**
+     * Procesar pago con tarjeta de crédito
+     */
+    public function processCredit(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'reserva_id' => 'required|exists:reservas,id',
+            'numero_tarjeta' => 'required|string|min:13|max:19',
+            'titular' => 'required|string|max:200',
+            'fecha_expiracion' => 'required|string',
+            'cvv' => 'required|string|min:3|max:4',
+        ]);
+
+        try {
+            $resultado = $this->paymentService->procesarTarjetaCredito(
+                $request->reserva_id,
+                $request->only(['numero_tarjeta', 'titular', 'fecha_expiracion', 'cvv'])
+            );
+
+            if ($resultado['success']) {
+                // Generar tiquetes
+                $this->ticketService->generarTiquetes($request->reserva_id, 'pdf');
+
+                // Obtener reserva y pago para la página de agradecimiento
+                $reserva = $this->bookingService->obtenerResumenReserva($request->reserva_id);
+                
+                return redirect()->route('booking.thankyou', ['reserva_id' => $request->reserva_id])
+                    ->with('success', $resultado['mensaje']);
+            } else {
+                return back()->withErrors(['error' => $resultado['mensaje']])->withInput();
+            }
+        } catch (\Exception $e) {
+            return back()->withErrors(['error' => 'Error al procesar el pago: ' . $e->getMessage()])->withInput();
+        }
+    }
+
+    /**
+     * Procesar pago con tarjeta de débito
+     */
+    public function processDebit(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'reserva_id' => 'required|exists:reservas,id',
+            'numero_tarjeta' => 'required|string|min:13|max:19',
+            'titular' => 'required|string|max:200',
+            'fecha_expiracion' => 'required|string',
+            'cvv' => 'required|string|min:3|max:4',
+        ]);
+
+        try {
+            $resultado = $this->paymentService->procesarTarjetaDebito(
+                $request->reserva_id,
+                $request->only(['numero_tarjeta', 'titular', 'fecha_expiracion', 'cvv'])
+            );
+
+            if ($resultado['success']) {
+                $this->ticketService->generarTiquetes($request->reserva_id, 'pdf');
+
+                return redirect()->route('booking.thankyou', ['reserva_id' => $request->reserva_id])
+                    ->with('success', $resultado['mensaje']);
+            } else {
+                return back()->withErrors(['error' => $resultado['mensaje']])->withInput();
+            }
+        } catch (\Exception $e) {
+            return back()->withErrors(['error' => 'Error al procesar el pago: ' . $e->getMessage()])->withInput();
+        }
+    }
+
+    /**
+     * Procesar pago con PSE
+     */
+    public function processPSE(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'reserva_id' => 'required|exists:reservas,id',
+            'banco' => 'required|string',
+            'tipo_cuenta' => 'required|in:ahorros,corriente',
+            'tipo_persona' => 'required|in:natural,juridica',
+        ]);
+
+        try {
+            $resultado = $this->paymentService->procesarPSE(
+                $request->reserva_id,
+                $request->only(['banco', 'tipo_cuenta', 'tipo_persona'])
+            );
+
+            if ($resultado['success']) {
+                $this->ticketService->generarTiquetes($request->reserva_id, 'pdf');
+
+                return redirect()->route('booking.thankyou', ['reserva_id' => $request->reserva_id])
+                    ->with('success', $resultado['mensaje']);
+            } else {
+                return back()->withErrors(['error' => $resultado['mensaje']])->withInput();
+            }
+        } catch (\Exception $e) {
+            return back()->withErrors(['error' => 'Error al procesar el pago: ' . $e->getMessage()])->withInput();
+        }
+    }
+
+    /**
+     * Mostrar página de agradecimiento
+     */
+    public function thankYou(int $reserva_id)
+    {
+        $reserva = $this->bookingService->obtenerResumenReserva($reserva_id);
+        $reservaModel = \App\Models\Reserva::findOrFail($reserva_id);
+        $pago = $reservaModel->pago;
+
+        return inertia('Booking/ThankYou', [
+            'reserva' => $reserva,
+            'pago' => $pago,
+        ]);
+    }
+}
