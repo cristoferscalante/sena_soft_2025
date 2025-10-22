@@ -8,7 +8,8 @@ import {
 } from '@heroicons/react/24/outline';
 
 export default function Select({ mapas_asientos, vuelos_ids }) {
-    const [asientosSeleccionados, setAsientosSeleccionados] = useState([]);
+    // Estructura: { asientoId: vueloId }
+    const [asientosSeleccionados, setAsientosSeleccionados] = useState({});
     const [pasajeros, setPasajeros] = useState(1);
     const [infantes, setInfantes] = useState(0);
     const [errorMsg, setErrorMsg] = useState('');
@@ -42,28 +43,47 @@ export default function Select({ mapas_asientos, vuelos_ids }) {
         }
     }, []);
 
-    // Si hay múltiples vuelos (ida y vuelta), asumimos selección por vuelo; por ahora
-    // cantidadRequerida es solo adultos (infantes no ocupan asiento)
-    const cantidadRequerida = pasajeros;
+    // Si hay múltiples vuelos (ida y vuelta), necesitamos asientos para cada vuelo
+    // cantidadRequerida es adultos * cantidad de vuelos
+    const cantidadVuelos = vuelos_ids ? vuelos_ids.length : 1;
+    const cantidadRequerida = pasajeros * cantidadVuelos;
 
-    const toggleAsiento = (asientoId, estado) => {
+    // Contar asientos seleccionados por vuelo
+    const contarAsientosPorVuelo = (vueloId) => {
+        return Object.values(asientosSeleccionados).filter(id => id === vueloId).length;
+    };
+
+    const toggleAsiento = (asientoId, estado, vueloId) => {
         if (estado !== 'disponible') return;
 
-        if (asientosSeleccionados.includes(asientoId)) {
-            setAsientosSeleccionados(prev => prev.filter(id => id !== asientoId));
+        if (asientosSeleccionados[asientoId]) {
+            // Deseleccionar
+            setAsientosSeleccionados(prev => {
+                const nuevo = { ...prev };
+                delete nuevo[asientoId];
+                return nuevo;
+            });
             setErrorMsg('');
         } else {
-            if (asientosSeleccionados.length < cantidadRequerida) {
-                setAsientosSeleccionados(prev => [...prev, asientoId]);
-                setErrorMsg('');
-            } else {
-                setErrorMsg(`Sólo puedes seleccionar ${cantidadRequerida} asiento${cantidadRequerida > 1 ? 's' : ''}.`);
+            // Verificar límite por vuelo
+            const asientosEnEsteVuelo = contarAsientosPorVuelo(vueloId);
+            
+            if (asientosEnEsteVuelo >= pasajeros) {
+                setErrorMsg(`Ya seleccionaste ${pasajeros} asiento${pasajeros > 1 ? 's' : ''} para este vuelo. Deselecciona uno antes de elegir otro.`);
+                return;
             }
+
+            // Seleccionar
+            setAsientosSeleccionados(prev => ({
+                ...prev,
+                [asientoId]: vueloId
+            }));
+            setErrorMsg('');
         }
     };
 
     const getAsientoColor = (asiento) => {
-        if (asientosSeleccionados.includes(asiento.id)) {
+        if (asientosSeleccionados[asiento.id]) {
             return 'bg-secondary-500 text-white border-secondary-600 shadow-lg scale-110';
         }
         switch (asiento.estado) {
@@ -78,13 +98,23 @@ export default function Select({ mapas_asientos, vuelos_ids }) {
     };
 
     const handleContinuar = () => {
-        if (asientosSeleccionados.length < cantidadRequerida) {
-            setErrorMsg(`Debes seleccionar ${cantidadRequerida} asiento${cantidadRequerida > 1 ? 's' : ''}. Falta/n ${cantidadRequerida - asientosSeleccionados.length}.`);
+        const totalSeleccionados = Object.keys(asientosSeleccionados).length;
+        
+        if (totalSeleccionados < cantidadRequerida) {
+            const faltantes = cantidadRequerida - totalSeleccionados;
+            
+            // Verificar cuántos faltan por vuelo
+            const detallesPorVuelo = mapas_asientos.map(mapa => {
+                const seleccionados = contarAsientosPorVuelo(mapa.vuelo_id);
+                return `${mapa.codigo_vuelo}: ${seleccionados}/${pasajeros}`;
+            }).join(', ');
+            
+            setErrorMsg(`Debes seleccionar ${cantidadRequerida} asiento${cantidadRequerida > 1 ? 's' : ''} en total (${pasajeros} por vuelo). Falta/n ${faltantes}. Estado: ${detallesPorVuelo}`);
             return;
         }
 
         router.post(route('seats.reserve'), {
-            asientos: asientosSeleccionados,
+            asientos: Object.keys(asientosSeleccionados).map(Number),
             vuelos: vuelos_ids,
             pasajeros: pasajeros,
             infantes: infantes,
@@ -107,12 +137,20 @@ export default function Select({ mapas_asientos, vuelos_ids }) {
 
         return (
             <div className="p-6 bg-white rounded-lg shadow-lg">
-                <div className="mb-6">
-                    <h3 className="mb-2 text-xl font-bold text-gray-900">
-                        Vuelo {mapa.codigo_vuelo}
-                    </h3>
-                    <div className="text-sm text-gray-600">
-                        Configuración: {mapa.configuracion.filas} filas × {mapa.configuracion.asientos_por_fila} asientos
+                <div className="flex items-center justify-between mb-6">
+                    <div>
+                        <h3 className="mb-2 text-xl font-bold text-gray-900">
+                            Vuelo {mapa.codigo_vuelo}
+                        </h3>
+                        <div className="text-sm text-gray-600">
+                            Configuración: {mapa.configuracion.filas} filas × {mapa.configuracion.asientos_por_fila} asientos
+                        </div>
+                    </div>
+                    <div className="px-4 py-2 rounded-lg bg-primary-50">
+                        <div className="text-sm text-gray-600">Seleccionados en este vuelo:</div>
+                        <div className="text-2xl font-bold text-center text-primary-600">
+                            {contarAsientosPorVuelo(mapa.vuelo_id)} / {pasajeros}
+                        </div>
                     </div>
                 </div>
 
@@ -159,7 +197,7 @@ export default function Select({ mapas_asientos, vuelos_ids }) {
                                         .map(asiento => (
                                             <button
                                                 key={asiento.id}
-                                                onClick={() => toggleAsiento(asiento.id, asiento.estado)}
+                                                onClick={() => toggleAsiento(asiento.id, asiento.estado, mapa.vuelo_id)}
                                                 disabled={asiento.estado !== 'disponible'}
                                                 className={`w-12 h-12 rounded-lg border-2 font-semibold text-sm transition-all ${getAsientoColor(asiento)}`}
                                                 title={`Asiento ${asiento.numero} - ${asiento.estado}`}
@@ -180,7 +218,7 @@ export default function Select({ mapas_asientos, vuelos_ids }) {
                                         .map(asiento => (
                                             <button
                                                 key={asiento.id}
-                                                onClick={() => toggleAsiento(asiento.id, asiento.estado)}
+                                                onClick={() => toggleAsiento(asiento.id, asiento.estado, mapa.vuelo_id)}
                                                 disabled={asiento.estado !== 'disponible'}
                                                 className={`w-12 h-12 rounded-lg border-2 font-semibold text-sm transition-all ${getAsientoColor(asiento)}`}
                                                 title={`Asiento ${asiento.numero} - ${asiento.estado}`}
@@ -215,24 +253,33 @@ export default function Select({ mapas_asientos, vuelos_ids }) {
                             Selección de Asientos
                         </h1>
                         <p className="text-gray-600">
-                            Selecciona {cantidadRequerida} asiento{cantidadRequerida > 1 ? 's' : ''} para {pasajeros} adulto{pasajeros > 1 ? 's' : ''}
-                            {infantes > 0 && ` (${infantes} infante${infantes > 1 ? 's' : ''} viaja${infantes > 1 ? 'n' : ''} en brazos sin asiento)`}
+                            Selecciona {pasajeros} asiento{pasajeros > 1 ? 's' : ''} por cada vuelo
+                            {infantes > 0 && ` (+ ${infantes} infante${infantes > 1 ? 's' : ''} sin asiento)`}
                         </p>
                         <div className="flex items-center mt-4 space-x-4">
                             <div className="flex items-center space-x-2">
                                 <span className="text-sm text-gray-600">Asientos seleccionados:</span>
                                 <span className="text-lg font-bold text-secondary-600">
-                                    {asientosSeleccionados.length}
+                                    {Object.keys(asientosSeleccionados).length} / {cantidadRequerida}
                                 </span>
                             </div>
-                            <div className="text-sm text-gray-600">
-                                • Necesarios: <span className="font-semibold">{cantidadRequerida} (adultos)</span>
-                            </div>
+                            {mapas_asientos.map((mapa) => {
+                                const seleccionadosEnVuelo = contarAsientosPorVuelo(mapa.vuelo_id);
+                                const completo = seleccionadosEnVuelo === pasajeros;
+                                return (
+                                    <div key={mapa.vuelo_id} className="text-sm">
+                                        <span className="text-gray-600">• {mapa.codigo_vuelo}: </span>
+                                        <span className={`font-semibold ${completo ? 'text-green-600' : 'text-orange-600'}`}>
+                                            {seleccionadosEnVuelo}/{pasajeros}
+                                        </span>
+                                    </div>
+                                );
+                            })}
                             {infantes > 0 && (
                                 <>
                                     <span className="text-gray-400">•</span>
                                     <span className="text-sm font-medium text-blue-600">
-                                        + {infantes} infante{infantes > 1 ? 's' : ''} (sin asiento)
+                                        {infantes} infante{infantes > 1 ? 's' : ''} (sin asiento)
                                     </span>
                                 </>
                             )}
@@ -250,12 +297,12 @@ export default function Select({ mapas_asientos, vuelos_ids }) {
                     </div>
 
                     {/* Botón continuar */}
-                    {asientosSeleccionados.length > 0 && (
+                    {Object.keys(asientosSeleccionados).length > 0 && (
                         <div className="sticky bottom-0 p-6 bg-white border-t border-gray-200 shadow-xl rounded-t-xl">
                             <div className="flex flex-col items-center justify-between mx-auto max-w-7xl md:flex-row">
                                 <div className="mb-4 md:mb-0">
                                     <div className="text-lg font-semibold text-gray-900">
-                                        {asientosSeleccionados.length} {asientosSeleccionados.length === 1 ? 'asiento seleccionado' : 'asientos seleccionados'}
+                                        {Object.keys(asientosSeleccionados).length} {Object.keys(asientosSeleccionados).length === 1 ? 'asiento seleccionado' : 'asientos seleccionados'}
                                     </div>
                                     <div className="text-sm text-gray-600">
                                         Continúa para ingresar los datos de los pasajeros
