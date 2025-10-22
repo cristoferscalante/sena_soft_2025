@@ -339,8 +339,8 @@ export default function Simulate({ reserva }) {
                                 <div className="mt-6 p-4 bg-blue-50 rounded-lg">
                                     <p className="text-sm text-blue-800 flex items-start">
                                         <LockClosedIcon className="w-5 h-5 mr-2 flex-shrink-0 mt-0.5" />
-                                        <span><strong>Pago Seguro:</strong> Este es un entorno de simulación. 
-                                        El sistema tiene un 80% de probabilidad de aprobar el pago automáticamente.</span>
+                                        <span><strong>Pago Seguro:</strong> Tu información está protegida y encriptada. 
+                                        Todos los pagos son procesados de forma segura.</span>
                                     </p>
                                 </div>
                             </div>
@@ -363,42 +363,72 @@ export default function Simulate({ reserva }) {
                                     </div>
 
                                     <div className="border-t pt-4">
-                                        <div className="text-sm text-gray-600 mb-2">Vuelos</div>
+                                        <div className="text-sm text-gray-600 mb-3">Desglose de Vuelos</div>
                                         {reserva.vuelos?.map((vuelo, index) => (
-                                            <div key={index} className="text-sm mb-2">
-                                                <div className="font-semibold">{vuelo.codigo}</div>
-                                                <div className="text-gray-600">
+                                            <div key={index} className="mb-4 pb-4 border-b last:border-b-0">
+                                                <div className="font-semibold text-sm">{vuelo.codigo}</div>
+                                                <div className="text-sm text-gray-600">
                                                     {vuelo.origen} → {vuelo.destino}
                                                 </div>
-                                                <div className="text-gray-500">{vuelo.fecha_salida}</div>
+                                                <div className="text-xs text-gray-500 mb-2">{vuelo.fecha_salida}</div>
+                                                <div className="space-y-1 text-sm">
+                                                    <div className="flex justify-between">
+                                                        <span className="text-gray-600">Precio unitario:</span>
+                                                        <span className="font-medium">${vuelo.precio_unitario?.toLocaleString()}</span>
+                                                    </div>
+                                                    <div className="flex justify-between">
+                                                        <span className="text-gray-600">Adultos:</span>
+                                                        <span className="font-medium">× {vuelo.cantidad_adultos}</span>
+                                                    </div>
+                                                    <div className="flex justify-between font-semibold text-primary-600">
+                                                        <span>Subtotal:</span>
+                                                        <span>${vuelo.subtotal?.toLocaleString()}</span>
+                                                    </div>
+                                                </div>
                                             </div>
                                         ))}
                                     </div>
 
                                     <div className="border-t pt-4">
-                                        <div className="text-sm text-gray-600">Pasajeros</div>
-                                        <div className="text-lg font-semibold">
-                                            {reserva.cantidad_pasajeros} {reserva.cantidad_pasajeros === 1 ? 'pasajero' : 'pasajeros'}
+                                        <div className="text-sm text-gray-600 mb-2">Pasajeros</div>
+                                        <div className="space-y-1">
+                                            {reserva.cantidad_adultos > 0 && (
+                                                <div className="flex justify-between text-sm">
+                                                    <span className="text-gray-700">Adultos:</span>
+                                                    <span className="font-semibold">{reserva.cantidad_adultos}</span>
+                                                </div>
+                                            )}
+                                            {reserva.cantidad_infantes > 0 && (
+                                                <div className="flex justify-between text-sm">
+                                                    <span className="text-gray-700">Infantes (sin cargo):</span>
+                                                    <span className="font-semibold text-blue-600">{reserva.cantidad_infantes}</span>
+                                                </div>
+                                            )}
+                                            <div className="flex justify-between text-sm font-semibold pt-2 border-t">
+                                                <span className="text-gray-700">Total pasajeros:</span>
+                                                <span>{reserva.cantidad_pasajeros}</span>
+                                            </div>
                                         </div>
                                     </div>
 
                                     <div className="border-t pt-4">
-                                        <div className="flex justify-between items-center mb-2">
-                                            <span className="text-gray-600">Subtotal</span>
-                                            <span className="font-semibold">${reserva.total?.toLocaleString()}</span>
-                                        </div>
-                                        <div className="flex justify-between items-center text-sm text-gray-600">
+                                        <div className="flex justify-between items-center text-sm text-gray-600 mb-2">
                                             <span>Impuestos incluidos</span>
                                         </div>
                                     </div>
 
-                                    <div className="border-t pt-4">
+                                    <div className="border-t pt-4 bg-primary-50 -mx-6 px-6 py-4">
                                         <div className="flex justify-between items-center">
-                                            <span className="text-lg font-bold">Total</span>
+                                            <span className="text-lg font-bold">Total a Pagar</span>
                                             <span className="text-2xl font-bold text-primary-600">
                                                 ${reserva.total?.toLocaleString()}
                                             </span>
                                         </div>
+                                        {reserva.cantidad_infantes > 0 && (
+                                            <div className="text-xs text-gray-600 mt-2">
+                                                * Los infantes menores de 3 años no tienen costo
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             </div>

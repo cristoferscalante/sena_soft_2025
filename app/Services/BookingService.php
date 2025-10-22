@@ -261,30 +261,47 @@ class BookingService
             'pago',
         ])->findOrFail($reservaId);
 
+        // Separar adultos e infantes
+        $adultos = $reserva->pasajeros->filter(fn($p) => !$p->es_infante);
+        $infantes = $reserva->pasajeros->filter(fn($p) => $p->es_infante);
+        
+        // Calcular desglose de precios por vuelo
+        $desgloseVuelos = $reserva->vuelos->map(function ($vuelo) use ($adultos) {
+            $precioUnitario = (float) $vuelo->precio_base;
+            $cantidadAdultos = $adultos->count();
+            $subtotal = $precioUnitario * $cantidadAdultos;
+            
+            return [
+                'codigo' => $vuelo->codigo_vuelo,
+                'origen' => $vuelo->ciudadOrigen->nombre . ' (' . $vuelo->ciudadOrigen->codigo_iata . ')',
+                'destino' => $vuelo->ciudadDestino->nombre . ' (' . $vuelo->ciudadDestino->codigo_iata . ')',
+                'fecha_salida' => $vuelo->fecha_salida->format('d/m/Y'),
+                'hora_salida' => substr($vuelo->hora_salida, 0, 5), // HH:MM
+                'precio_unitario' => $precioUnitario,
+                'cantidad_adultos' => $cantidadAdultos,
+                'subtotal' => $subtotal,
+            ];
+        });
+
         return [
             'codigo_reserva' => $reserva->codigo_unico,
             'estado' => $reserva->estado,
             'total' => (float) $reserva->total,
             'cantidad_pasajeros' => $reserva->cantidad_pasajeros,
+            'cantidad_adultos' => $adultos->count(),
+            'cantidad_infantes' => $infantes->count(),
             'pagador' => [
                 'nombre' => $reserva->pagador->nombre_completo,
                 'documento' => $reserva->pagador->tipo_documento . ' ' . $reserva->pagador->numero_documento,
                 'correo' => $reserva->pagador->correo,
                 'telefono' => $reserva->pagador->telefono,
             ],
-            'vuelos' => $reserva->vuelos->map(function ($vuelo) {
-                return [
-                    'codigo' => $vuelo->codigo_vuelo,
-                    'origen' => $vuelo->ciudadOrigen->nombre . ' (' . $vuelo->ciudadOrigen->codigo_iata . ')',
-                    'destino' => $vuelo->ciudadDestino->nombre . ' (' . $vuelo->ciudadDestino->codigo_iata . ')',
-                    'fecha_salida' => $vuelo->fecha_salida->format('d/m/Y'),
-                    'hora_salida' => substr($vuelo->hora_salida, 0, 5), // HH:MM
-                ];
-            }),
+            'vuelos' => $desgloseVuelos,
             'pasajeros' => $reserva->pasajeros->map(function ($pasajero) {
                 return [
                     'nombre_completo' => $pasajero->nombre_completo,
                     'documento' => $pasajero->tipo_documento . ' ' . $pasajero->numero_documento,
+                    'es_infante' => $pasajero->es_infante,
                     'asientos' => $pasajero->asientos->map(function ($asiento) {
                         return [
                             'numero' => $asiento->numero,
