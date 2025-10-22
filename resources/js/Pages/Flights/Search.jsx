@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Head, router } from '@inertiajs/react';
 import MainLayout from '@/Layouts/MainLayout';
 import { 
@@ -56,6 +56,16 @@ export default function Search({ ciudades }) {
             tipo_viaje: tipoViaje,
         });
     };
+
+    // Persistir la cantidad de pasajeros en localStorage para que la vista de selección
+    // de asientos pueda leerla si la navegación no incluye explícitamente el valor.
+    useEffect(() => {
+        try {
+            localStorage.setItem('pasajeros', String(formData.pasajeros));
+        } catch (e) {
+            // Silent fail (p. ej. en entornos donde localStorage está deshabilitado)
+        }
+    }, [formData.pasajeros]);
 
     return (
         <MainLayout>

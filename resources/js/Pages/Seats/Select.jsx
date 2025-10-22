@@ -9,16 +9,54 @@ import {
 
 export default function Select({ mapas_asientos, vuelos_ids }) {
     const [asientosSeleccionados, setAsientosSeleccionados] = useState([]);
-    const cantidadRequerida = mapas_asientos[0]?.vuelo_id ? mapas_asientos.length * 1 : 1; // Simplificado
+    const [pasajeros, setPasajeros] = useState(1);
+    const [errorMsg, setErrorMsg] = useState('');
+
+    // Determinar la cantidad requerida: preferir query param/localStorage, fallbacks
+    useEffect(() => {
+        // intentar leer de query string
+        try {
+            const params = new URLSearchParams(window.location.search);
+            const p = params.get('pasajeros');
+            if (p && !Number.isNaN(Number(p))) {
+                setPasajeros(Math.max(1, Math.min(5, Number(p))));
+                return;
+            }
+        } catch (e) {
+            // ignore
+        }
+
+        // fallback a localStorage
+        try {
+            const stored = localStorage.getItem('pasajeros');
+            if (stored && !Number.isNaN(Number(stored))) {
+                setPasajeros(Math.max(1, Math.min(5, Number(stored))));
+                return;
+            }
+        } catch (e) {
+            // ignore
+        }
+
+        // fallback por defecto
+        setPasajeros(1);
+    }, []);
+
+    // Si hay múltiples vuelos (ida y vuelta), asumimos selección por vuelo; por ahora
+    // cantidadRequerida es pasajeros por vuelo (puedes ajustar si quieres total)
+    const cantidadRequerida = pasajeros;
 
     const toggleAsiento = (asientoId, estado) => {
         if (estado !== 'disponible') return;
 
         if (asientosSeleccionados.includes(asientoId)) {
-            setAsientosSeleccionados(asientosSeleccionados.filter(id => id !== asientoId));
+            setAsientosSeleccionados(prev => prev.filter(id => id !== asientoId));
+            setErrorMsg('');
         } else {
-            if (asientosSeleccionados.length < 5) {
-                setAsientosSeleccionados([...asientosSeleccionados, asientoId]);
+            if (asientosSeleccionados.length < cantidadRequerida) {
+                setAsientosSeleccionados(prev => [...prev, asientoId]);
+                setErrorMsg('');
+            } else {
+                setErrorMsg(`Sólo puedes seleccionar ${cantidadRequerida} asiento${cantidadRequerida > 1 ? 's' : ''}.`);
             }
         }
     };
@@ -39,14 +77,15 @@ export default function Select({ mapas_asientos, vuelos_ids }) {
     };
 
     const handleContinuar = () => {
-        if (asientosSeleccionados.length === 0) {
-            alert('Por favor selecciona al menos un asiento');
+        if (asientosSeleccionados.length < cantidadRequerida) {
+            setErrorMsg(`Debes seleccionar ${cantidadRequerida} asiento${cantidadRequerida > 1 ? 's' : ''}. Falta/n ${cantidadRequerida - asientosSeleccionados.length}.`);
             return;
         }
 
         router.post(route('seats.reserve'), {
             asientos: asientosSeleccionados,
             vuelos: vuelos_ids,
+            pasajeros: pasajeros,
         });
     };
 
@@ -183,11 +222,17 @@ export default function Select({ mapas_asientos, vuelos_ids }) {
                                     {asientosSeleccionados.length}
                                 </span>
                             </div>
+                            <div className="text-sm text-gray-600">
+                                • Necesarios: <span className="font-semibold">{cantidadRequerida}</span>
+                            </div>
                             <span className="text-gray-400">•</span>
                             <span className="text-sm text-gray-600">
                                 Máximo: 5 asientos
                             </span>
                         </div>
+                        {errorMsg && (
+                            <p className="mt-2 text-sm text-red-600">{errorMsg}</p>
+                        )}
                     </div>
 
                     {/* Mapas de asientos */}
