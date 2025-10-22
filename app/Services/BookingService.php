@@ -264,13 +264,13 @@ class BookingService
         // Separar adultos e infantes
         $adultos = $reserva->pasajeros->filter(fn($p) => !$p->es_infante);
         $infantes = $reserva->pasajeros->filter(fn($p) => $p->es_infante);
-        
+
         // Calcular desglose de precios por vuelo
         $desgloseVuelos = $reserva->vuelos->map(function ($vuelo) use ($adultos) {
             $precioUnitario = (float) $vuelo->precio_base;
             $cantidadAdultos = $adultos->count();
             $subtotal = $precioUnitario * $cantidadAdultos;
-            
+
             return [
                 'codigo' => $vuelo->codigo_vuelo,
                 'origen' => $vuelo->ciudadOrigen->nombre . ' (' . $vuelo->ciudadOrigen->codigo_iata . ')',

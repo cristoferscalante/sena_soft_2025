@@ -1,6 +1,6 @@
 import { Head, Link } from '@inertiajs/react';
 import MainLayout from '@/Layouts/MainLayout';
-import { 
+import {
     CheckCircleIcon,
     PaperAirplaneIcon,
     ArrowDownTrayIcon,

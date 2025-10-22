@@ -21,7 +21,7 @@ class PaymentService
     private function simularPago(int $reservaId, array $datosPago): array
     {
         $reserva = Reserva::findOrFail($reservaId);
-        
+
         return DB::transaction(function () use ($reserva, $datosPago) {
             // Crear pago aprobado
             $pago = Pago::create([
@@ -39,7 +39,7 @@ class PaymentService
 
             // Actualizar estado de reserva a pagada
             $reserva->update(['estado' => 'pagada']);
-            
+
             // Confirmar reserva
             $this->bookingService->confirmarReserva($reserva->id);
 

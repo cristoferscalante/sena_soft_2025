@@ -33,7 +33,12 @@ class TicketService
         foreach ($reserva->pasajeros as $pasajero) {
             foreach ($pasajero->asientos as $asiento) {
                 if ($formato === 'pdf') {
-                    $tiquete = $this->generarTiquetePDF($reserva, $pasajero, $asiento->vuelo, $asiento);
+                    try {
+                        $tiquete = $this->generarTiquetePDF($reserva, $pasajero, $asiento->vuelo, $asiento);
+                    } catch (\Exception $e) {
+                        logger()->error('Error generando tiquete PDF, haciendo fallback a JSON', ['exception' => $e, 'reserva_id' => $reserva->id, 'pasajero_id' => $pasajero->id]);
+                        $tiquete = $this->generarTiqueteJSON($reserva, $pasajero, $asiento->vuelo, $asiento);
+                    }
                 } else {
                     $tiquete = $this->generarTiqueteJSON($reserva, $pasajero, $asiento->vuelo, $asiento);
                 }

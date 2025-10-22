@@ -53,17 +53,35 @@ class PaymentController extends Controller
             );
 
             if ($resultado['success']) {
-                // Generar tiquetes
-                $this->ticketService->generarTiquetes($request->reserva_id, 'pdf');
-                
-                // Generar recibo de pago
-                $this->receiptService->generarReciboPDF($resultado['pago_id']);
+                $warnings = [];
+
+                // Generar tiquetes (no bloquear el flujo si falla la generación de PDF)
+                try {
+                    $this->ticketService->generarTiquetes($request->reserva_id, 'pdf');
+                } catch (\Exception $e) {
+                    logger()->error('Error generando tiquetes tras pago', ['exception' => $e, 'reserva_id' => $request->reserva_id]);
+                    $warnings[] = 'tiquetes';
+                }
+
+                // Generar recibo de pago (no bloquear el flujo si falla la generación de PDF)
+                try {
+                    $this->receiptService->generarReciboPDF($resultado['pago_id']);
+                } catch (\Exception $e) {
+                    logger()->error('Error generando recibo tras pago', ['exception' => $e, 'pago_id' => $resultado['pago_id']]);
+                    $warnings[] = 'recibo';
+                }
 
                 // Obtener reserva y pago para la página de agradecimiento
                 $reserva = $this->bookingService->obtenerResumenReserva($request->reserva_id);
 
-                return redirect()->route('booking.thankyou', ['reserva_id' => $request->reserva_id])
+                $redirect = redirect()->route('booking.thankyou', ['reserva_id' => $request->reserva_id])
                     ->with('success', $resultado['mensaje']);
+
+                if (!empty($warnings)) {
+                    $redirect = $redirect->with('warning', 'La generación de documentos (tiquetes/recibo) tuvo problemas. Se creó el pago correctamente.');
+                }
+
+                return $redirect;
             } else {
                 return back()->withErrors(['error' => $resultado['mensaje']])->withInput();
             }

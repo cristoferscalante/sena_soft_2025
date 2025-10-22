@@ -29,24 +29,35 @@ class ReceiptService
         // Preparar datos para el recibo
         $datosRecibo = $this->prepararDatosRecibo($pago);
 
-        // Generar PDF usando dompdf
-        $pdf = Pdf::loadView('receipts.payment', $datosRecibo);
-        $pdf->setPaper('a4', 'portrait');
+        // Generar PDF usando dompdf -- envolver en try/catch para no bloquear el pago
+        try {
+            $pdf = Pdf::loadView('receipts.payment', $datosRecibo);
+            $pdf->setPaper('a4', 'portrait');
 
-        // Generar nombre único para el archivo
-        $nombreArchivo = "recibo_{$pago->referencia}.pdf";
-        $rutaArchivo = "receipts/{$nombreArchivo}";
+            // Generar nombre único para el archivo
+            $nombreArchivo = "recibo_{$pago->referencia}.pdf";
+            $rutaArchivo = "receipts/{$nombreArchivo}";
 
-        // Guardar PDF en storage
-        Storage::put($rutaArchivo, $pdf->output());
+            // Guardar PDF en storage
+            Storage::put($rutaArchivo, $pdf->output());
 
-        return [
-            'success' => true,
-            'archivo' => $nombreArchivo,
-            'ruta' => $rutaArchivo,
-            'url' => Storage::url($rutaArchivo),
-            'contenido' => $pdf->output(),
-        ];
+            return [
+                'success' => true,
+                'archivo' => $nombreArchivo,
+                'ruta' => $rutaArchivo,
+                'url' => Storage::url($rutaArchivo),
+                'contenido' => $pdf->output(),
+            ];
+        } catch (\Exception $e) {
+            // Registrar el error y devolver respuesta controlada
+            logger()->error('Error generando recibo PDF', ['exception' => $e, 'pago_id' => $pagoId]);
+
+            return [
+                'success' => false,
+                'error' => 'Error generando PDF',
+                'message' => $e->getMessage(),
+            ];
+        }
     }
 
     /**
@@ -72,7 +83,7 @@ class ReceiptService
             $precioUnitario = (float) $vuelo->precio_base;
             $cantidadAdultos = $adultos->count();
             $subtotal = $precioUnitario * $cantidadAdultos;
-            
+
             return [
                 'codigo' => $vuelo->codigo_vuelo,
                 'origen' => [

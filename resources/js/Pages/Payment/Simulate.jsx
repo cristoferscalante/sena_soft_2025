@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Head, router, usePage } from '@inertiajs/react';
 import MainLayout from '@/Layouts/MainLayout';
-import { 
+import {
     CreditCardIcon,
     BanknotesIcon,
     BuildingLibraryIcon,
@@ -40,7 +40,7 @@ export default function Simulate({ reserva }) {
 
         if (metodoPago === 'credito') {
             route_name = 'payment.credit'
-          
+
             data = { ...data, ...datosTarjeta };
               console.log('datosTarjeta', datosTarjeta);
         } else if (metodoPago === 'debito') {
@@ -178,9 +178,9 @@ export default function Simulate({ reserva }) {
                                                     maxLength="19"
                                                     placeholder="1234 5678 9012 3456"
                                                     value={datosTarjeta.numero_tarjeta}
-                                                    onChange={(e) => setDatosTarjeta({ 
-                                                        ...datosTarjeta, 
-                                                        numero_tarjeta: formatCardNumber(e.target.value) 
+                                                    onChange={(e) => setDatosTarjeta({
+                                                        ...datosTarjeta,
+                                                        numero_tarjeta: formatCardNumber(e.target.value)
                                                     })}
                                                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-lg"
                                                 />
@@ -339,7 +339,7 @@ export default function Simulate({ reserva }) {
                                 <div className="mt-6 p-4 bg-blue-50 rounded-lg">
                                     <p className="text-sm text-blue-800 flex items-start">
                                         <LockClosedIcon className="w-5 h-5 mr-2 flex-shrink-0 mt-0.5" />
-                                        <span><strong>Pago Seguro:</strong> Tu información está protegida y encriptada. 
+                                        <span><strong>Pago Seguro:</strong> Tu información está protegida y encriptada.
                                         Todos los pagos son procesados de forma segura.</span>
                                     </p>
                                 </div>
