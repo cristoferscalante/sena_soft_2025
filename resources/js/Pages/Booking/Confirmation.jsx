@@ -14,7 +14,14 @@ import {
 
 export default function Confirmation({ reserva }) {
     const handleDescargarTodos = () => {
-        window.location.href = route('tickets.reserva', { codigo: reserva.codigo_reserva });
+        // Descargar directamente el PDF de tiquetes combinado
+        const url = route('tickets.reserva.pdf', { codigo: reserva.codigo_reserva });
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `tiquetes_${reserva.codigo_reserva}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     };
 
     return (

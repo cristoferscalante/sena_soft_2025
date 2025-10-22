@@ -123,6 +123,9 @@ class BookingController extends Controller
      */
     public function show(string $codigo): Response
     {
+        // Limpiar el código de espacios en blanco
+        $codigo = trim($codigo);
+
         $reserva = $this->bookingService->obtenerReserva($codigo);
 
         if (!$reserva) {
