@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Head, router } from '@inertiajs/react';
+import { Head, router, usePage } from '@inertiajs/react';
 import MainLayout from '@/Layouts/MainLayout';
 import { 
     CreditCardIcon,
@@ -14,6 +14,8 @@ import {
 export default function Simulate({ reserva }) {
     const [metodoPago, setMetodoPago] = useState('credito');
     const [procesando, setProcesando] = useState(false);
+    const { props } = usePage();
+    const errors = props?.errors || {};
 
     const [datosTarjeta, setDatosTarjeta] = useState({
         numero_tarjeta: '',
@@ -32,12 +34,15 @@ export default function Simulate({ reserva }) {
         e.preventDefault();
         setProcesando(true);
 
-        let route_name = '';
-        let data = { reserva_id: reserva.codigo_reserva };
+    let route_name = '';
+    // usar el id numérico de la reserva (agregado por el controlador)
+    let data = { reserva_id: reserva.id ?? reserva.codigo_reserva };
 
         if (metodoPago === 'credito') {
-            route_name = 'payment.credit';
+            route_name = 'payment.credit'
+          
             data = { ...data, ...datosTarjeta };
+              console.log('datosTarjeta', datosTarjeta);
         } else if (metodoPago === 'debito') {
             route_name = 'payment.debit';
             data = { ...data, ...datosTarjeta };
@@ -47,6 +52,7 @@ export default function Simulate({ reserva }) {
         }
 
         router.post(route(route_name), data, {
+            onError: () => setProcesando(false),
             onFinish: () => setProcesando(false),
         });
     };
@@ -178,6 +184,9 @@ export default function Simulate({ reserva }) {
                                                     })}
                                                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-lg"
                                                 />
+                                                {errors.numero_tarjeta && (
+                                                    <p className="mt-1 text-sm text-red-600">{errors.numero_tarjeta}</p>
+                                                )}
                                             </div>
 
                                             <div>
@@ -192,6 +201,9 @@ export default function Simulate({ reserva }) {
                                                     onChange={(e) => setDatosTarjeta({ ...datosTarjeta, titular: e.target.value.toUpperCase() })}
                                                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                                                 />
+                                                {errors.titular && (
+                                                    <p className="mt-1 text-sm text-red-600">{errors.titular}</p>
+                                                )}
                                             </div>
 
                                             <div className="grid grid-cols-2 gap-4">
@@ -214,6 +226,9 @@ export default function Simulate({ reserva }) {
                                                         }}
                                                         className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                                                     />
+                                                    {errors.fecha_expiracion && (
+                                                        <p className="mt-1 text-sm text-red-600">{errors.fecha_expiracion}</p>
+                                                    )}
                                                 </div>
 
                                                 <div>
@@ -229,9 +244,18 @@ export default function Simulate({ reserva }) {
                                                         onChange={(e) => setDatosTarjeta({ ...datosTarjeta, cvv: e.target.value.replace(/\D/g, '') })}
                                                         className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                                                     />
+                                                    {errors.cvv && (
+                                                        <p className="mt-1 text-sm text-red-600">{errors.cvv}</p>
+                                                    )}
                                                 </div>
                                             </div>
                                         </>
+                                    )}
+
+                                    {errors.error && (
+                                        <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded">
+                                            <p className="text-sm text-red-700">{errors.error}</p>
+                                        </div>
                                     )}
 
                                     {metodoPago === 'pse' && (
