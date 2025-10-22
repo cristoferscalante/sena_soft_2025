@@ -319,5 +319,43 @@ class TicketService
             ],
         ];
     }
+
+    /**
+     * Generar PDF combinado con todos los tiquetes de una reserva
+     */
+    public function generarPDFTiquetesReserva(string $codigoReserva): array
+    {
+        $reserva = Reserva::with([
+            'pasajeros.asientos.vuelo.ciudadOrigen',
+            'pasajeros.asientos.vuelo.ciudadDestino',
+            'pasajeros.asientos.vuelo.aeronave.modelo',
+            'pagador',
+            'pago',
+        ])->where('codigo_unico', $codigoReserva)->firstOrFail();
+
+        // Preparar datos de todos los tiquetes
+        $tiquetes = [];
+        foreach ($reserva->pasajeros as $pasajero) {
+            foreach ($pasajero->asientos as $asiento) {
+                $tiquetes[] = $this->prepararDatosTiquete($reserva, $pasajero, $asiento->vuelo, $asiento);
+            }
+        }
+
+        // Generar PDF combinado
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('tickets.combined-pdf', [
+            'reserva' => $reserva,
+            'tiquetes' => $tiquetes,
+        ]);
+        $pdf->setPaper('a4', 'portrait');
+
+        // Nombre del archivo
+        $nombreArchivo = "tiquetes_reserva_{$codigoReserva}.pdf";
+
+        return [
+            'contenido' => $pdf->output(),
+            'nombre_archivo' => $nombreArchivo,
+            'tipo' => 'pdf',
+        ];
+    }
 }
 

@@ -54,6 +54,25 @@ class TicketController extends Controller
     }
 
     /**
+     * Descargar todos los tiquetes de una reserva como PDF
+     */
+    public function downloadReservaPDF(string $codigo): Response
+    {
+        try {
+            $archivo = $this->ticketService->generarPDFTiquetesReserva($codigo);
+
+            return response($archivo['contenido'])
+                ->header('Content-Type', 'application/pdf')
+                ->header('Content-Disposition', 'attachment; filename="' . $archivo['nombre_archivo'] . '"')
+                ->header('Cache-Control', 'no-cache, no-store, must-revalidate')
+                ->header('Pragma', 'no-cache')
+                ->header('Expires', '0');
+        } catch (\Exception $e) {
+            abort(404, 'No se pudieron generar los tiquetes: ' . $e->getMessage());
+        }
+    }
+
+    /**
      * Enviar tiquetes por correo
      */
     public function sendEmail(Request $request)

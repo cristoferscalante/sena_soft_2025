@@ -18,7 +18,8 @@ export default function Passengers({ vuelos, asientos, cantidad_pasajeros, canti
     // Calcular si un índice corresponde a un infante
     // Los primeros cantidad_adultos son adultos, los siguientes son infantes
     const esIndiceInfante = (index) => {
-        return cantidad_adultos && index >= cantidad_adultos;
+        // Solo considerar como infante si realmente hay infantes en la reserva
+        return cantidad_infantes > 0 && cantidad_adultos && index >= cantidad_adultos;
     };
 
     // Intentar cargar datos del localStorage (válido por 1 hora)
