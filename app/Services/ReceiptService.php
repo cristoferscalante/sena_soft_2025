@@ -67,10 +67,9 @@ class ReceiptService
     {
         $reserva = $pago->reserva;
 
-        // Calcular totales y desglose
-        $subtotal = $reserva->total;
-        $impuestos = $subtotal * 0.19; // IVA 19%
-        $total = $subtotal + $impuestos;
+        // Separar adultos e infantes
+        $adultos = $reserva->pasajeros->filter(fn($p) => !$p->es_infante);
+        $infantes = $reserva->pasajeros->filter(fn($p) => $p->es_infante);
 
         // Obtener información de vuelos únicos
         $vuelos = $reserva->pasajeros->flatMap(function ($pasajero) {
@@ -78,6 +77,36 @@ class ReceiptService
                 return $asiento->vuelo;
             });
         })->unique('id')->values();
+
+        // Calcular desglose por vuelo
+        $desgloseVuelos = $vuelos->map(function ($vuelo) use ($adultos) {
+            $precioUnitario = (float) $vuelo->precio_base;
+            $cantidadAdultos = $adultos->count();
+            $subtotal = $precioUnitario * $cantidadAdultos;
+
+            return [
+                'codigo' => $vuelo->codigo_vuelo,
+                'origen' => [
+                    'ciudad' => $vuelo->ciudadOrigen->nombre,
+                    'codigo_iata' => $vuelo->ciudadOrigen->codigo_iata,
+                    'pais' => $vuelo->ciudadOrigen->pais,
+                ],
+                'destino' => [
+                    'ciudad' => $vuelo->ciudadDestino->nombre,
+                    'codigo_iata' => $vuelo->ciudadDestino->codigo_iata,
+                    'pais' => $vuelo->ciudadDestino->pais,
+                ],
+                'fecha_salida' => $vuelo->fecha_salida->format('Y-m-d'),
+                'hora_salida' => substr($vuelo->hora_salida, 0, 5), // HH:MM
+                'fecha_llegada' => $vuelo->fecha_llegada->format('Y-m-d'),
+                'hora_llegada' => substr($vuelo->hora_llegada, 0, 5), // HH:MM
+                'precio_unitario' => $precioUnitario,
+                'cantidad_adultos' => $cantidadAdultos,
+                'subtotal' => $subtotal,
+            ];
+        })->toArray();
+
+        $subtotalVuelos = collect($desgloseVuelos)->sum('subtotal');
 
         return [
             'recibo' => [
@@ -96,7 +125,7 @@ class ReceiptService
             'cliente' => [
                 'nombre' => $reserva->pagador->nombre_completo,
                 'documento' => $reserva->pagador->tipo_documento . ' ' . $reserva->pagador->numero_documento,
-                'email' => $reserva->pagador->email,
+                'email' => $reserva->pagador->correo,
                 'telefono' => $reserva->pagador->telefono,
             ],
             'reserva' => [
@@ -104,30 +133,15 @@ class ReceiptService
                 'fecha_creacion' => $reserva->created_at->format('Y-m-d H:i:s'),
                 'estado' => $reserva->estado,
                 'total_pasajeros' => $reserva->pasajeros->count(),
+                'cantidad_adultos' => $adultos->count(),
+                'cantidad_infantes' => $infantes->count(),
             ],
-            'vuelos' => $vuelos->map(function ($vuelo) {
-                return [
-                    'codigo' => $vuelo->codigo_vuelo,
-                    'origen' => [
-                        'ciudad' => $vuelo->ciudadOrigen->nombre,
-                        'codigo_iata' => $vuelo->ciudadOrigen->codigo_iata,
-                        'pais' => $vuelo->ciudadOrigen->pais,
-                    ],
-                    'destino' => [
-                        'ciudad' => $vuelo->ciudadDestino->nombre,
-                        'codigo_iata' => $vuelo->ciudadDestino->codigo_iata,
-                        'pais' => $vuelo->ciudadDestino->pais,
-                    ],
-                    'fecha_salida' => $vuelo->fecha_salida->format('Y-m-d'),
-                    'hora_salida' => substr($vuelo->hora_salida, 0, 5), // HH:MM
-                    'fecha_llegada' => $vuelo->fecha_llegada->format('Y-m-d'),
-                    'hora_llegada' => substr($vuelo->hora_llegada, 0, 5), // HH:MM
-                ];
-            })->toArray(),
+            'vuelos' => $desgloseVuelos,
             'pasajeros' => $reserva->pasajeros->map(function ($pasajero) {
                 return [
                     'nombre' => $pasajero->nombre_completo,
                     'documento' => $pasajero->tipo_documento . ' ' . $pasajero->numero_documento,
+                    'es_infante' => $pasajero->es_infante,
                     'asientos' => $pasajero->asientos->map(function ($asiento) {
                         return [
                             'numero' => $asiento->numero,
@@ -144,9 +158,8 @@ class ReceiptService
                 'datos_adicionales' => $pago->datos_pago_json,
             ],
             'totales' => [
-                'subtotal' => $subtotal,
-                'impuestos' => $impuestos,
-                'total' => $total,
+                'subtotal' => $subtotalVuelos,
+                'total' => (float) $reserva->total,
                 'moneda' => 'COP',
             ],
         ];

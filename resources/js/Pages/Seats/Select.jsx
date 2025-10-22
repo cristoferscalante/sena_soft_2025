@@ -67,7 +67,7 @@ export default function Select({ mapas_asientos, vuelos_ids }) {
         } else {
             // Verificar límite por vuelo
             const asientosEnEsteVuelo = contarAsientosPorVuelo(vueloId);
-            
+
             if (asientosEnEsteVuelo >= pasajeros) {
                 setErrorMsg(`Ya seleccionaste ${pasajeros} asiento${pasajeros > 1 ? 's' : ''} para este vuelo. Deselecciona uno antes de elegir otro.`);
                 return;
@@ -99,16 +99,16 @@ export default function Select({ mapas_asientos, vuelos_ids }) {
 
     const handleContinuar = () => {
         const totalSeleccionados = Object.keys(asientosSeleccionados).length;
-        
+
         if (totalSeleccionados < cantidadRequerida) {
             const faltantes = cantidadRequerida - totalSeleccionados;
-            
+
             // Verificar cuántos faltan por vuelo
             const detallesPorVuelo = mapas_asientos.map(mapa => {
                 const seleccionados = contarAsientosPorVuelo(mapa.vuelo_id);
                 return `${mapa.codigo_vuelo}: ${seleccionados}/${pasajeros}`;
             }).join(', ');
-            
+
             setErrorMsg(`Debes seleccionar ${cantidadRequerida} asiento${cantidadRequerida > 1 ? 's' : ''} en total (${pasajeros} por vuelo). Falta/n ${faltantes}. Estado: ${detallesPorVuelo}`);
             return;
         }

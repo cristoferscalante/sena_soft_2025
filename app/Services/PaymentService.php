@@ -16,38 +16,36 @@ class PaymentService
     }
 
     /**
-     * Simular procesamiento de pago
-     * 80% de probabilidad de éxito, 20% de rechazo
+     * Procesar pago - Todos los pagos son aprobados automáticamente
      */
     private function simularPago(int $reservaId, array $datosPago): array
     {
         $reserva = Reserva::findOrFail($reservaId);
-        
-        // Simular pago con 80% de éxito
-        $esAprobado = (rand(1, 100) <= 80);
-        
-        return DB::transaction(function () use ($reserva, $datosPago, $esAprobado) {
-            // Crear pago
+
+        return DB::transaction(function () use ($reserva, $datosPago) {
+            // Crear pago aprobado
             $pago = Pago::create([
                 'reserva_id' => $reserva->id,
                 'metodo_pago' => $datosPago['metodo_pago'],
-                'estado' => $esAprobado ? 'aprobado' : 'rechazado',
+                'estado' => 'aprobado',
                 'monto' => $reserva->total,
                 'datos_pago_json' => [
                     'ultimos_digitos' => substr(preg_replace('/\D/', '', $datosPago['numero_tarjeta'] ?? ''), -4),
                     'tipo_tarjeta' => $this->detectarTipoTarjeta($datosPago['numero_tarjeta'] ?? ''),
+                    'banco' => $datosPago['banco'] ?? null,
                 ],
                 'fecha_pago' => now(),
             ]);
 
-            if ($esAprobado) {
-                $reserva->update(['estado' => 'pagada']);
-                $this->bookingService->confirmarReserva($reserva->id);
-            }
+            // Actualizar estado de reserva a pagada
+            $reserva->update(['estado' => 'pagada']);
+
+            // Confirmar reserva
+            $this->bookingService->confirmarReserva($reserva->id);
 
             return [
-                'success' => $esAprobado,
-                'mensaje' => $esAprobado ? '¡Pago aprobado exitosamente!' : 'Pago rechazado. Por favor, intente con otro método de pago.',
+                'success' => true,
+                'mensaje' => '¡Pago aprobado exitosamente!',
                 'referencia' => $pago->referencia,
                 'pago_id' => $pago->id,
             ];

@@ -1,6 +1,6 @@
 import { Head, Link } from '@inertiajs/react';
 import MainLayout from '@/Layouts/MainLayout';
-import { 
+import {
     CheckCircleIcon,
     PaperAirplaneIcon,
     ArrowDownTrayIcon,
@@ -133,14 +133,24 @@ export default function ThankYou({ reserva, pago }) {
                             ¿Qué sigue ahora?
                         </h3>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                             <Link
                                 href={route('booking.show', { codigo: reserva.codigo_reserva })}
                                 className="flex items-center justify-center space-x-3 bg-secondary-500 hover:bg-secondary-600 text-white font-bold py-4 px-6 rounded-lg transition-colors shadow-lg"
                             >
                                 <ArrowDownTrayIcon className="w-6 h-6" />
-                                <span>Ver y Descargar Tiquetes</span>
+                                <span>Descargar Tiquetes</span>
                             </Link>
+
+                            <a
+                                href={route('receipts.download', { referencia: pago.referencia })}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center justify-center space-x-3 bg-accent-500 hover:bg-accent-600 text-white font-bold py-4 px-6 rounded-lg transition-colors shadow-lg"
+                            >
+                                <ArrowDownTrayIcon className="w-6 h-6" />
+                                <span>Descargar Recibo</span>
+                            </a>
 
                             <Link
                                 href="/"
