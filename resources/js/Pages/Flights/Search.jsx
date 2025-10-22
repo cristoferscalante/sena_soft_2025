@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Head, router } from '@inertiajs/react';
 import MainLayout from '@/Layouts/MainLayout';
-import { 
+import {
     PaperAirplaneIcon,
     ArrowPathIcon,
     MapPinIcon,
@@ -72,11 +72,11 @@ export default function Search({ ciudades }) {
             <Head title="Buscar Vuelos" />
 
             {/* Hero Section */}
-            <div className="relative bg-gradient-to-br from-primary-500 via-primary-600 to-primary-700 text-white">
+            <div className="relative text-white bg-gradient-to-br from-primary-500 via-primary-600 to-primary-700">
                 <div className="absolute inset-0 bg-black opacity-10"></div>
-                <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
-                    <div className="text-center mb-12">
-                        <h1 className="text-4xl md:text-5xl font-bold mb-4 flex items-center justify-center">
+                <div className="relative px-4 py-20 mx-auto max-w-7xl sm:px-6 lg:px-8">
+                    <div className="mb-12 text-center">
+                        <h1 className="flex items-center justify-center mb-4 text-4xl font-bold md:text-5xl">
                             <PaperAirplaneIcon className="w-12 h-12 mr-4" />
                             Encuentra tu próximo destino
                         </h1>
@@ -87,7 +87,7 @@ export default function Search({ ciudades }) {
 
                     {/* Search Form */}
                     <div className="max-w-5xl mx-auto">
-                        <div className="bg-white rounded-2xl shadow-2xl p-6 md:p-8">
+                        <div className="p-6 bg-white shadow-2xl rounded-2xl md:p-8">
                             <form onSubmit={handleSubmit} className="space-y-6">
                                 {/* Tipo de viaje */}
                                 <div className="flex space-x-4">
@@ -100,7 +100,7 @@ export default function Search({ ciudades }) {
                                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                                         }`}
                                     >
-                                        <PaperAirplaneIcon className="w-5 h-5 inline-block mr-2" />
+                                        <PaperAirplaneIcon className="inline-block w-5 h-5 mr-2" />
                                         Solo Ida
                                     </button>
                                     <button
@@ -112,16 +112,16 @@ export default function Search({ ciudades }) {
                                                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                                         }`}
                                     >
-                                        <ArrowPathIcon className="w-5 h-5 inline-block mr-2" />
+                                        <ArrowPathIcon className="inline-block w-5 h-5 mr-2" />
                                         Ida y Regreso
                                     </button>
                                 </div>
 
                                 {/* Ciudades y Fechas */}
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                                     {/* Desde */}
                                     <div>
-                                        <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center">
+                                        <label className="flex items-center block mb-2 text-sm font-semibold text-gray-700">
                                             <MapPinIcon className="w-5 h-5 mr-2 text-primary-500" />
                                             Desde
                                         </label>
@@ -146,7 +146,7 @@ export default function Search({ ciudades }) {
 
                                     {/* Hasta */}
                                     <div>
-                                        <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center">
+                                        <label className="flex items-center block mb-2 text-sm font-semibold text-gray-700">
                                             <MapPinIcon className="w-5 h-5 mr-2 text-primary-500" />
                                             Hasta
                                         </label>
@@ -171,7 +171,7 @@ export default function Search({ ciudades }) {
 
                                     {/* Fecha de Inicio */}
                                     <div>
-                                        <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center">
+                                        <label className="flex items-center block mb-2 text-sm font-semibold text-gray-700">
                                             <CalendarIcon className="w-5 h-5 mr-2 text-primary-500" />
                                             Fecha de inicio
                                         </label>
@@ -181,9 +181,10 @@ export default function Search({ ciudades }) {
                                             onChange={(e) => setFormData({ ...formData, fecha_ida: e.target.value })}
                                             min={today}
                                             max={maxDateStr}
-                                            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
+                                            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-gray-900 ${
                                                 errors.fecha_ida ? 'border-red-500' : 'border-gray-300'
                                             }`}
+                                            style={{ colorScheme: 'light' }}
                                         />
                                         {errors.fecha_ida && (
                                             <p className="mt-1 text-sm text-red-600">{errors.fecha_ida}</p>
@@ -191,9 +192,10 @@ export default function Search({ ciudades }) {
                                     </div>
 
                                     {/* Fecha de Finalización */}
+                                    {/* Fecha de Finalización */}
                                     {tipoViaje === 'ida_regreso' && (
                                         <div>
-                                            <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center">
+                                            <label className="flex items-center block mb-2 text-sm font-semibold text-gray-700">
                                                 <CalendarIcon className="w-5 h-5 mr-2 text-primary-500" />
                                                 Fecha de finalización
                                             </label>
@@ -203,9 +205,10 @@ export default function Search({ ciudades }) {
                                                 onChange={(e) => setFormData({ ...formData, fecha_regreso: e.target.value })}
                                                 min={formData.fecha_ida || today}
                                                 max={maxDateStr}
-                                                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
+                                                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-gray-900 ${
                                                     errors.fecha_regreso ? 'border-red-500' : 'border-gray-300'
                                                 }`}
+                                                style={{ colorScheme: 'light' }}
                                             />
                                             {errors.fecha_regreso && (
                                                 <p className="mt-1 text-sm text-red-600">{errors.fecha_regreso}</p>
@@ -216,7 +219,7 @@ export default function Search({ ciudades }) {
 
                                 {/* Pasajeros */}
                                 <div>
-                                    <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center">
+                                    <label className="flex items-center block mb-2 text-sm font-semibold text-gray-700">
                                         <UserGroupIcon className="w-5 h-5 mr-2 text-primary-500" />
                                         Adultos (máximo 5)
                                     </label>
@@ -224,17 +227,17 @@ export default function Search({ ciudades }) {
                                         <button
                                             type="button"
                                             onClick={() => setFormData({ ...formData, pasajeros: Math.max(1, formData.pasajeros - 1) })}
-                                            className="w-12 h-12 rounded-full bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold flex items-center justify-center transition-colors"
+                                            className="flex items-center justify-center w-12 h-12 font-bold text-gray-700 transition-colors bg-gray-200 rounded-full hover:bg-gray-300"
                                         >
                                             <MinusIcon className="w-6 h-6" />
                                         </button>
-                                        <span className="text-2xl font-bold text-gray-700 w-16 text-center">
+                                        <span className="w-16 text-2xl font-bold text-center text-gray-700">
                                             {formData.pasajeros}
                                         </span>
                                         <button
                                             type="button"
                                             onClick={() => setFormData({ ...formData, pasajeros: Math.min(5, formData.pasajeros + 1) })}
-                                            className="w-12 h-12 rounded-full bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold flex items-center justify-center transition-colors"
+                                            className="flex items-center justify-center w-12 h-12 font-bold text-gray-700 transition-colors bg-gray-200 rounded-full hover:bg-gray-300"
                                         >
                                             <PlusIcon className="w-6 h-6" />
                                         </button>
@@ -247,7 +250,7 @@ export default function Search({ ciudades }) {
                                 {/* Botón de búsqueda */}
                                 <button
                                     type="submit"
-                                    className="w-full bg-secondary-500 hover:bg-secondary-600 text-white font-bold py-4 px-6 rounded-lg text-lg transition-colors shadow-lg hover:shadow-xl flex items-center justify-center space-x-2"
+                                    className="flex items-center justify-center w-full px-6 py-4 space-x-2 text-lg font-bold text-white transition-colors rounded-lg shadow-lg bg-secondary-500 hover:bg-secondary-600 hover:shadow-xl"
                                 >
                                     <MagnifyingGlassIcon className="w-6 h-6" />
                                     <span>Buscar Vuelos</span>
@@ -259,35 +262,35 @@ export default function Search({ ciudades }) {
             </div>
 
             {/* Features Section */}
-            <div className="bg-white py-16">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <h2 className="text-3xl font-bold text-center text-gray-900 mb-12">
+            <div className="py-16 bg-white">
+                <div className="px-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
+                    <h2 className="mb-12 text-3xl font-bold text-center text-gray-900">
                         ¿Por qué elegir AirGuider?
                     </h2>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                        <div className="text-center p-6">
-                            <div className="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
+                        <div className="p-6 text-center">
+                            <div className="flex items-center justify-center w-16 h-16 mx-auto mb-4 rounded-full bg-primary-100">
                                 <CurrencyDollarIcon className="w-8 h-8 text-primary-600" />
                             </div>
-                            <h3 className="text-xl font-semibold text-gray-900 mb-2">Mejores Precios</h3>
+                            <h3 className="mb-2 text-xl font-semibold text-gray-900">Mejores Precios</h3>
                             <p className="text-gray-600">
                                 Encuentra las tarifas más competitivas del mercado
                             </p>
                         </div>
-                        <div className="text-center p-6">
-                            <div className="w-16 h-16 bg-secondary-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <div className="p-6 text-center">
+                            <div className="flex items-center justify-center w-16 h-16 mx-auto mb-4 rounded-full bg-secondary-100">
                                 <BoltIcon className="w-8 h-8 text-secondary-600" />
                             </div>
-                            <h3 className="text-xl font-semibold text-gray-900 mb-2">Reserva Rápida</h3>
+                            <h3 className="mb-2 text-xl font-semibold text-gray-900">Reserva Rápida</h3>
                             <p className="text-gray-600">
                                 Proceso de reserva simple y en pocos pasos
                             </p>
                         </div>
-                        <div className="text-center p-6">
-                            <div className="w-16 h-16 bg-accent-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <div className="p-6 text-center">
+                            <div className="flex items-center justify-center w-16 h-16 mx-auto mb-4 rounded-full bg-accent-100">
                                 <LockClosedIcon className="w-8 h-8 text-accent-600" />
                             </div>
-                            <h3 className="text-xl font-semibold text-gray-900 mb-2">Pago Seguro</h3>
+                            <h3 className="mb-2 text-xl font-semibold text-gray-900">Pago Seguro</h3>
                             <p className="text-gray-600">
                                 Transacciones protegidas y datos encriptados
                             </p>

@@ -8,7 +8,7 @@ Toda la documentación del análisis, arquitectura y diseño se encuentra en la 
 
 - **[`doc/analisis.md`](doc/analisis.md)** - Análisis completo de requerimientos, casos de uso, modelo de datos y plan de trabajo
 - **[`doc/Diagramas/arquitectura_diagrama.md`](doc/Diagramas/arquitectura_diagrama.md)** - Arquitectura del sistema con Laravel + Inertia.js + React + MySQL, diagramas de componentes, flujos y estrategias de concurrencia
-- **[`doc/Db/diseño_bd.md`](doc/Db/diseño_bd.md)** - Diseño de base de datos con diagramas ER, DDL, triggers, stored procedures y seeders
+- **[`doc/Db/diseño_bd.md`](doc/Db/diseño_bd.md)** - Diseño de base de datos con diagramas ER, DDL, stored procedures y seeders
 - **[`doc/Diagramas/diagrama_flujo.md`](doc/Diagramas/diagrama_flujo.md)** - Diagramas de flujo detallados de todas las operaciones del sistema
 
 ## 🎨 Diseño UI/UX
