@@ -37,11 +37,24 @@ class BookingService
                 ]
             );
 
-            // 2. Calcular total
+            // 2. Calcular total (infantes no pagan)
             $total = 0;
+            $pasajerosQueNoSonInfantes = 0;
+
+            foreach ($datos['pasajeros'] as $pasajeroData) {
+                // Calcular si es infante automáticamente
+                $fechaNacimiento = Carbon::parse($pasajeroData['fecha_nacimiento']);
+                $edad = $fechaNacimiento->diffInYears(Carbon::now());
+                $esInfante = $edad < 3;
+
+                if (!$esInfante) {
+                    $pasajerosQueNoSonInfantes++;
+                }
+            }
+
             foreach ($datos['vuelos'] as $vueloData) {
                 $vuelo = Vuelo::find($vueloData['vuelo_id']);
-                $total += $vuelo->precio_base * count($datos['pasajeros']);
+                $total += $vuelo->precio_base * $pasajerosQueNoSonInfantes;
             }
 
             // 3. Crear reserva
@@ -60,8 +73,13 @@ class BookingService
                 ]);
             }
 
-            // 5. Crear pasajeros
+            // 5. Crear pasajeros (calcular es_infante automáticamente)
             foreach ($datos['pasajeros'] as $pasajeroData) {
+                // Calcular edad y determinar si es infante
+                $fechaNacimiento = Carbon::parse($pasajeroData['fecha_nacimiento']);
+                $edad = $fechaNacimiento->diffInYears(Carbon::now());
+                $esInfante = $edad < 3;
+
                 Pasajero::create([
                     'reserva_id' => $reserva->id,
                     'primer_apellido' => $pasajeroData['primer_apellido'],
@@ -71,13 +89,13 @@ class BookingService
                     'genero' => $pasajeroData['genero'],
                     'tipo_documento' => $pasajeroData['tipo_documento'],
                     'numero_documento' => $pasajeroData['numero_documento'],
-                    'es_infante' => $pasajeroData['es_infante'] ?? false,
+                    'es_infante' => $esInfante,
                     'celular' => $pasajeroData['celular'],
                     'correo' => $pasajeroData['correo'],
                 ]);
             }
 
-            // 6. Reservar asientos si se proporcionan
+            // 6. Reservar asientos si se proporcionan (infantes no ocupan asiento)
             if (isset($datos['asientos']) && !empty($datos['asientos'])) {
                 $resultado = $this->seatService->reservarAsientos($datos['asientos'], $reserva->id);
 
@@ -85,11 +103,15 @@ class BookingService
                     throw new \RuntimeException('Error al reservar asientos: ' . json_encode($resultado['asientos_fallidos']));
                 }
 
-                // Asignar asientos a pasajeros
+                // Asignar asientos a pasajeros (solo a los que no son infantes)
                 $pasajeros = $reserva->pasajeros;
+                $pasajerosNoInfantes = $pasajeros->filter(function($pasajero) {
+                    return !$pasajero->es_infante;
+                })->values();
+
                 foreach ($resultado['asientos_reservados'] as $index => $asiento) {
-                    if (isset($pasajeros[$index])) {
-                        $this->seatService->asignarAsientoAPasajero($asiento->id, $pasajeros[$index]->id);
+                    if (isset($pasajerosNoInfantes[$index])) {
+                        $this->seatService->asignarAsientoAPasajero($asiento->id, $pasajerosNoInfantes[$index]->id);
                     }
                 }
             }
@@ -256,7 +278,7 @@ class BookingService
                     'origen' => $vuelo->ciudadOrigen->nombre . ' (' . $vuelo->ciudadOrigen->codigo_iata . ')',
                     'destino' => $vuelo->ciudadDestino->nombre . ' (' . $vuelo->ciudadDestino->codigo_iata . ')',
                     'fecha_salida' => $vuelo->fecha_salida->format('d/m/Y'),
-                    'hora_salida' => $vuelo->hora_salida->format('H:i'),
+                    'hora_salida' => substr($vuelo->hora_salida, 0, 5), // HH:MM
                 ];
             }),
             'pasajeros' => $reserva->pasajeros->map(function ($pasajero) {

@@ -31,7 +31,7 @@ class FlightService
 
         // Buscar vuelos (con caché de 5 minutos)
         $cacheKey = "vuelos:{$origenId}:{$destinoId}:{$fecha}:{$pasajeros}";
-        
+
         return Cache::remember($cacheKey, 300, function () use ($origenId, $destinoId, $fecha, $pasajeros) {
             return Vuelo::with(['ciudadOrigen', 'ciudadDestino', 'aeronave.modelo'])
                 ->buscar($origenId, $destinoId, $fecha)
@@ -54,9 +54,9 @@ class FlightService
                             'codigo_iata' => $vuelo->ciudadDestino->codigo_iata,
                         ],
                         'fecha_salida' => $vuelo->fecha_salida->format('Y-m-d'),
-                        'hora_salida' => $vuelo->hora_salida->format('H:i'),
+                        'hora_salida' => substr($vuelo->hora_salida, 0, 5), // HH:MM
                         'fecha_llegada' => $vuelo->fecha_llegada->format('Y-m-d'),
-                        'hora_llegada' => $vuelo->hora_llegada->format('H:i'),
+                        'hora_llegada' => substr($vuelo->hora_llegada, 0, 5), // HH:MM
                         'precio_base' => (float) $vuelo->precio_base,
                         'asientos_disponibles' => $vuelo->asientos_disponibles,
                         'capacidad_total' => $vuelo->capacidad_total,
@@ -138,9 +138,9 @@ class FlightService
                 'codigo_iata' => $vuelo->ciudadDestino->codigo_iata,
             ],
             'fecha_salida' => $vuelo->fecha_salida->format('Y-m-d'),
-            'hora_salida' => $vuelo->hora_salida->format('H:i'),
+            'hora_salida' => substr($vuelo->hora_salida, 0, 5), // HH:MM
             'fecha_llegada' => $vuelo->fecha_llegada->format('Y-m-d'),
-            'hora_llegada' => $vuelo->hora_llegada->format('H:i'),
+            'hora_llegada' => substr($vuelo->hora_llegada, 0, 5), // HH:MM
             'precio_base' => (float) $vuelo->precio_base,
             'asientos_disponibles' => $vuelo->asientos_disponibles,
             'capacidad_total' => $vuelo->capacidad_total,
@@ -172,12 +172,12 @@ class FlightService
     public function validarDisponibilidad(int $vueloId, int $cantidadPasajeros): bool
     {
         $vuelo = Vuelo::find($vueloId);
-        
+
         if (!$vuelo) {
             return false;
         }
 
-        return $vuelo->asientos_disponibles >= $cantidadPasajeros 
+        return $vuelo->asientos_disponibles >= $cantidadPasajeros
             && $vuelo->estado === 'programado'
             && $vuelo->fecha_salida >= Carbon::today();
     }

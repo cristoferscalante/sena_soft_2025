@@ -1,5 +1,6 @@
 import { Head, useForm, Link } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
+import useFormNotifications from '@/hooks/useFormNotifications';
 import { MapPinIcon, ArrowLeftIcon, CheckIcon } from '@heroicons/react/24/outline';
 
 export default function CreateCiudad() {
@@ -9,9 +10,18 @@ export default function CreateCiudad() {
         pais: 'Colombia',
     });
 
+    const { showSuccess, showError } = useFormNotifications();
+
     const submit = (e) => {
         e.preventDefault();
-        post(route('admin.ciudades.store'));
+        post(route('admin.ciudades.store'), {
+            onSuccess: () => {
+                showSuccess('Ciudad creada exitosamente');
+            },
+            onError: () => {
+                showError('Error al crear la ciudad. Verifica los campos.');
+            },
+        });
     };
 
     return (

@@ -1,5 +1,6 @@
 import { Head, useForm, Link } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
+import useFormNotifications from '@/hooks/useFormNotifications';
 import { MapPinIcon, ArrowLeftIcon, CheckIcon } from '@heroicons/react/24/outline';
 
 export default function EditCiudad({ ciudad }) {
@@ -9,9 +10,18 @@ export default function EditCiudad({ ciudad }) {
         pais: ciudad.pais || 'Colombia',
     });
 
+    const { showSuccess, showError } = useFormNotifications();
+
     const submit = (e) => {
         e.preventDefault();
-        put(route('admin.ciudades.update', ciudad.id));
+        put(route('admin.ciudades.update', ciudad.id), {
+            onSuccess: () => {
+                showSuccess('Ciudad actualizada exitosamente');
+            },
+            onError: () => {
+                showError('Error al actualizar la ciudad. Verifica los campos.');
+            },
+        });
     };
 
     return (

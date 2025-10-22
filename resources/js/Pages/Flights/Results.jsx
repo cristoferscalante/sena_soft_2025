@@ -1,13 +1,15 @@
 import { useState } from 'react';
 import { Head, router } from '@inertiajs/react';
 import MainLayout from '@/Layouts/MainLayout';
-import { 
+import {
     PaperAirplaneIcon,
     CalendarIcon,
     UserGroupIcon,
     CheckCircleIcon,
     ClockIcon,
-    ArrowRightIcon
+    ArrowRightIcon,
+    ExclamationCircleIcon,
+    MagnifyingGlassIcon
 } from '@heroicons/react/24/outline';
 
 export default function Results({ vuelos_ida, vuelos_regreso, busqueda }) {
@@ -20,6 +22,13 @@ export default function Results({ vuelos_ida, vuelos_regreso, busqueda }) {
         const vuelosSeleccionados = [vueloIdaSeleccionado];
         if (esIdaYRegreso && vueloRegresoSeleccionado) {
             vuelosSeleccionados.push(vueloRegresoSeleccionado);
+        }
+
+        // Guardar búsqueda en localStorage para mantener info de infantes
+        try {
+            localStorage.setItem('busqueda', JSON.stringify(busqueda));
+        } catch (e) {
+            // Silent fail
         }
 
         // Redirigir a selección de asientos
@@ -183,10 +192,17 @@ export default function Results({ vuelos_ida, vuelos_regreso, busqueda }) {
                             </div>
                         ) : (
                             <div className="bg-white rounded-lg shadow-md p-8 text-center">
-                                <span className="text-6xl mb-4 block">😔</span>
-                                <p className="text-xl text-gray-600">
+                                <ExclamationCircleIcon className="w-24 h-24 mx-auto mb-4 text-gray-400" />
+                                <p className="text-xl text-gray-600 mb-6">
                                     No hay vuelos disponibles para esta ruta
                                 </p>
+                                <button
+                                    onClick={() => router.visit(route('flights.search'))}
+                                    className="inline-flex items-center px-6 py-3 bg-primary-600 text-white font-medium rounded-lg hover:bg-primary-700 transition-colors"
+                                >
+                                    <MagnifyingGlassIcon className="w-5 h-5 mr-2" />
+                                    Buscar otros vuelos
+                                </button>
                             </div>
                         )}
                     </div>
@@ -212,10 +228,17 @@ export default function Results({ vuelos_ida, vuelos_regreso, busqueda }) {
                                 </div>
                             ) : (
                                 <div className="bg-white rounded-lg shadow-md p-8 text-center">
-                                    <span className="text-6xl mb-4 block">😔</span>
-                                    <p className="text-xl text-gray-600">
+                                    <ExclamationCircleIcon className="w-24 h-24 mx-auto mb-4 text-gray-400" />
+                                    <p className="text-xl text-gray-600 mb-6">
                                         No hay vuelos de regreso disponibles
                                     </p>
+                                    <button
+                                        onClick={() => router.visit(route('flights.search'))}
+                                        className="inline-flex items-center px-6 py-3 bg-primary-600 text-white font-medium rounded-lg hover:bg-primary-700 transition-colors"
+                                    >
+                                        <MagnifyingGlassIcon className="w-5 h-5 mr-2" />
+                                        Buscar otros vuelos
+                                    </button>
                                 </div>
                             )}
                         </div>

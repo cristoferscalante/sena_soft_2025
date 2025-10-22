@@ -1,17 +1,47 @@
 import { Head, Link, router } from '@inertiajs/react';
+import { useState, useEffect } from 'react';
 import AdminLayout from '@/Layouts/AdminLayout';
-import { 
+import useFormNotifications from '@/hooks/useFormNotifications';
+import {
     PlusIcon,
     PencilIcon,
     TrashIcon,
-    PaperAirplaneIcon
+    PaperAirplaneIcon,
+    MagnifyingGlassIcon,
+    XMarkIcon
 } from '@heroicons/react/24/outline';
 
-export default function VuelosIndex({ vuelos }) {
+export default function VuelosIndex({ vuelos, filters }) {
+    const [search, setSearch] = useState(filters.search || '');
+    const { showSuccess, showError } = useFormNotifications();
+
     const handleDelete = (id) => {
         if (confirm('¿Estás seguro de eliminar este vuelo?')) {
-            router.delete(route('admin.vuelos.destroy', id));
+            router.delete(route('admin.vuelos.destroy', id), {
+                onSuccess: () => {
+                    showSuccess('Vuelo eliminado exitosamente');
+                },
+                onError: () => {
+                    showError('No se pudo eliminar el vuelo');
+                },
+            });
         }
+    };
+
+    const handleSearch = (e) => {
+        e.preventDefault();
+        router.get(route('admin.vuelos.index'), { search }, {
+            preserveState: true,
+            preserveScroll: true,
+        });
+    };
+
+    const clearSearch = () => {
+        setSearch('');
+        router.get(route('admin.vuelos.index'), {}, {
+            preserveState: true,
+            preserveScroll: true,
+        });
     };
 
     return (
@@ -22,58 +52,126 @@ export default function VuelosIndex({ vuelos }) {
                 {/* Header */}
                 <div className="flex items-center justify-between mb-6">
                     <div>
-                        <h1 className="text-3xl font-bold text-gray-900 flex items-center">
+                        <h1 className="flex items-center text-3xl font-bold text-gray-900">
                             <PaperAirplaneIcon className="w-8 h-8 mr-3 text-primary-600" />
                             Gestión de Vuelos
                         </h1>
-                        <p className="text-gray-600 mt-1">Administra todos los vuelos del sistema</p>
+                        <p className="mt-1 text-gray-600">Administra todos los vuelos del sistema</p>
                     </div>
                     <Link
                         href={route('admin.vuelos.create')}
-                        className="flex items-center space-x-2 bg-secondary-500 hover:bg-secondary-600 text-white font-bold py-3 px-6 rounded-lg transition-colors shadow-lg"
+                        className="flex items-center px-6 py-3 space-x-2 font-bold text-white transition-colors rounded-lg shadow-lg bg-secondary-500 hover:bg-secondary-600"
                     >
                         <PlusIcon className="w-5 h-5" />
                         <span>Nuevo Vuelo</span>
                     </Link>
                 </div>
 
+                {/* Search Bar */}
+                <div className="p-4 mb-6 bg-white rounded-lg shadow-md">
+                    <form onSubmit={handleSearch} className="flex items-center space-x-4">
+                        <div className="relative flex-1">
+                            <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                <MagnifyingGlassIcon className="w-5 h-5 text-gray-400" />
+                            </div>
+                            <input
+                                type="text"
+                                value={search}
+                                onChange={(e) => setSearch(e.target.value)}
+                                className="block w-full py-3 pl-10 pr-10 text-gray-900 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                                placeholder="Buscar por código de vuelo, ciudad, aeronave o estado..."
+                            />
+                            {search && (
+                                <button
+                                    type="button"
+                                    onClick={clearSearch}
+                                    className="absolute inset-y-0 right-0 flex items-center pr-3"
+                                >
+                                    <XMarkIcon className="w-5 h-5 text-gray-400 hover:text-gray-600" />
+                                </button>
+                            )}
+                        </div>
+                        <button
+                            type="submit"
+                            className="flex items-center px-6 py-3 space-x-2 font-semibold text-white transition-colors rounded-lg bg-primary-600 hover:bg-primary-700"
+                        >
+                            <MagnifyingGlassIcon className="w-5 h-5" />
+                            <span>Buscar</span>
+                        </button>
+                    </form>
+
+                    {filters.search && (
+                        <div className="flex items-center justify-between mt-3 text-sm">
+                            <span className="text-gray-600">
+                                Resultados para: <span className="font-semibold text-gray-900">"{filters.search}"</span>
+                            </span>
+                            <button
+                                onClick={clearSearch}
+                                className="font-medium text-primary-600 hover:text-primary-800"
+                            >
+                                Limpiar búsqueda
+                            </button>
+                        </div>
+                    )}
+                </div>
+
                 {/* Vuelos Table */}
-                <div className="bg-white rounded-lg shadow-md overflow-hidden">
-                    <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200">
-                            <thead className="bg-primary-600">
-                                <tr>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
-                                        Código
-                                    </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
-                                        Ruta
-                                    </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
-                                        Fecha/Hora
-                                    </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
-                                        Precio
-                                    </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
-                                        Asientos
-                                    </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
-                                        Estado
-                                    </th>
-                                    <th className="px-6 py-3 text-right text-xs font-medium text-white uppercase tracking-wider">
-                                        Acciones
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody className="bg-white divide-y divide-gray-200">
-                                {vuelos.data.map((vuelo) => (
-                                    <tr key={vuelo.id} className="hover:bg-gray-50">
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="text-sm font-semibold text-primary-600">
-                                                {vuelo.codigo_vuelo}
-                                            </div>
-                                        </td>
+                <div className="overflow-hidden bg-white rounded-lg shadow-md">
+                    {vuelos.data.length === 0 ? (
+                        <div className="py-12 text-center">
+                            <PaperAirplaneIcon className="w-12 h-12 mx-auto text-gray-400" />
+                            <h3 className="mt-2 text-sm font-medium text-gray-900">No se encontraron vuelos</h3>
+                            <p className="mt-1 text-sm text-gray-500">
+                                {filters.search
+                                    ? 'Intenta con otros términos de búsqueda.'
+                                    : 'Comienza creando un nuevo vuelo.'}
+                            </p>
+                            {filters.search && (
+                                <button
+                                    onClick={clearSearch}
+                                    className="inline-flex items-center px-4 py-2 mt-4 text-sm font-medium text-white border border-transparent rounded-md shadow-sm bg-primary-600 hover:bg-primary-700"
+                                >
+                                    Limpiar búsqueda
+                                </button>
+                            )}
+                        </div>
+                    ) : (
+                        <>
+                            <div className="overflow-x-auto">
+                                <table className="min-w-full divide-y divide-gray-200">
+                                    <thead className="bg-primary-600">
+                                        <tr>
+                                            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-white uppercase">
+                                                Código
+                                            </th>
+                                            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-white uppercase">
+                                                Ruta
+                                            </th>
+                                            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-white uppercase">
+                                                Fecha/Hora
+                                            </th>
+                                            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-white uppercase">
+                                                Precio
+                                            </th>
+                                            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-white uppercase">
+                                                Asientos
+                                            </th>
+                                            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-white uppercase">
+                                                Estado
+                                            </th>
+                                            <th className="px-6 py-3 text-xs font-medium tracking-wider text-right text-white uppercase">
+                                                Acciones
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="bg-white divide-y divide-gray-200">
+                                        {vuelos.data.map((vuelo) => (
+                                            <tr key={vuelo.id} className="hover:bg-gray-50">
+                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                    <div className="text-sm font-semibold text-primary-600">
+                                                        {vuelo.codigo_vuelo}
+                                                    </div>
+                                                </td>
                                         <td className="px-6 py-4">
                                             <div className="text-sm text-gray-900">
                                                 {vuelo.ciudad_origen?.nombre} → {vuelo.ciudad_destino?.nombre}
@@ -110,18 +208,18 @@ export default function VuelosIndex({ vuelos }) {
                                                 {vuelo.estado}
                                             </span>
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                        <td className="px-6 py-4 text-sm font-medium text-right whitespace-nowrap">
                                             <Link
                                                 href={route('admin.vuelos.edit', vuelo.id)}
-                                                className="text-primary-600 hover:text-primary-900 mr-4"
+                                                className="mr-4 text-primary-600 hover:text-primary-900"
                                             >
-                                                <PencilIcon className="w-5 h-5 inline" />
+                                                <PencilIcon className="inline w-5 h-5" />
                                             </Link>
                                             <button
                                                 onClick={() => handleDelete(vuelo.id)}
                                                 className="text-red-600 hover:text-red-900"
                                             >
-                                                <TrashIcon className="w-5 h-5 inline" />
+                                                <TrashIcon className="inline w-5 h-5" />
                                             </button>
                                         </td>
                                     </tr>
@@ -132,7 +230,7 @@ export default function VuelosIndex({ vuelos }) {
 
                     {/* Pagination */}
                     {vuelos.links && (
-                        <div className="bg-gray-50 px-6 py-4 border-t border-gray-200">
+                        <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
                             <div className="flex items-center justify-between">
                                 <div className="text-sm text-gray-700">
                                     Mostrando <span className="font-medium">{vuelos.from}</span> a{' '}
@@ -155,6 +253,8 @@ export default function VuelosIndex({ vuelos }) {
                                 </div>
                             </div>
                         </div>
+                    )}
+                    </>
                     )}
                 </div>
             </div>

@@ -22,7 +22,7 @@ class SeatController extends Controller
     public function index(Request $request): Response
     {
         $vuelosIds = $request->input('vuelos', []);
-        
+
         if (empty($vuelosIds)) {
             return back()->withErrors(['error' => 'Debe seleccionar al menos un vuelo']);
         }
@@ -47,12 +47,16 @@ class SeatController extends Controller
             'asientos' => 'required|array|min:1|max:5',
             'asientos.*' => 'required|exists:asientos,id',
             'vuelos' => 'required|array|min:1',
+            'pasajeros' => 'nullable|integer|min:1|max:5',
+            'infantes' => 'nullable|integer|min:0|max:2',
         ]);
 
         try {
             // Guardar selección en sesión (no se reserva aún en BD)
             $request->session()->put('asientos_seleccionados', $request->asientos);
             $request->session()->put('vuelos_seleccionados', $request->vuelos);
+            $request->session()->put('cantidad_adultos', $request->input('pasajeros', count($request->asientos)));
+            $request->session()->put('cantidad_infantes', $request->input('infantes', 0));
 
             return redirect()->route('booking.create')
                 ->with('success', 'Asientos seleccionados. Complete los datos de los pasajeros.');

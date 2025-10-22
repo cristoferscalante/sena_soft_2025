@@ -1,8 +1,9 @@
 import { Head, Link, useForm } from '@inertiajs/react';
 import MainLayout from '@/Layouts/MainLayout';
-import { 
+import useFormNotifications from '@/hooks/useFormNotifications';
+import {
     ShieldCheckIcon,
-    EnvelopeIcon, 
+    EnvelopeIcon,
     LockClosedIcon,
     ArrowRightIcon
 } from '@heroicons/react/24/outline';
@@ -13,9 +14,17 @@ export default function AdminLogin({ status }) {
         password: '',
     });
 
+    const { showSuccess, showError } = useFormNotifications();
+
     const submit = (e) => {
         e.preventDefault();
         post(route('admin.login.post'), {
+            onSuccess: () => {
+                showSuccess('¡Bienvenido al panel de administración!');
+            },
+            onError: () => {
+                showError('Credenciales incorrectas o acceso denegado.');
+            },
             onFinish: () => reset('password'),
         });
     };

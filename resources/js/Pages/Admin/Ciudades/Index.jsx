@@ -1,11 +1,21 @@
 import { Head, Link, router } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
+import useFormNotifications from '@/hooks/useFormNotifications';
 import { MapPinIcon, PlusIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
 
 export default function CiudadesIndex({ ciudades }) {
+    const { showSuccess, showError } = useFormNotifications();
+
     const handleDelete = (id) => {
         if (confirm('¿Estás seguro de eliminar esta ciudad?')) {
-            router.delete(route('admin.ciudades.destroy', id));
+            router.delete(route('admin.ciudades.destroy', id), {
+                onSuccess: () => {
+                    showSuccess('Ciudad eliminada exitosamente');
+                },
+                onError: () => {
+                    showError('No se pudo eliminar la ciudad');
+                },
+            });
         }
     };
 

@@ -6,6 +6,7 @@ use App\Models\Tiquete;
 use App\Models\Reserva;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Log;
 
 class TicketService
 {
@@ -126,9 +127,9 @@ class TicketService
                     'pais' => $vuelo->ciudadDestino->pais,
                 ],
                 'fecha_salida' => $vuelo->fecha_salida->format('Y-m-d'),
-                'hora_salida' => $vuelo->hora_salida->format('H:i'),
+                'hora_salida' => substr($vuelo->hora_salida, 0, 5), // HH:MM
                 'fecha_llegada' => $vuelo->fecha_llegada->format('Y-m-d'),
-                'hora_llegada' => $vuelo->hora_llegada->format('H:i'),
+                'hora_llegada' => substr($vuelo->hora_llegada, 0, 5), // HH:MM
                 'aeronave' => [
                     'matricula' => $vuelo->aeronave->matricula,
                     'modelo' => $vuelo->aeronave->modelo->nombre,
@@ -194,14 +195,14 @@ class TicketService
         if ($tiquete->formato === 'pdf') {
             // Extraer la ruta correcta del archivo
             $rutaArchivo = str_replace('/storage/', '', $tiquete->url_archivo);
-            
+
             // Verificar si el archivo existe
             if (!Storage::exists($rutaArchivo)) {
                 // Si no existe, regenerar el PDF
                 $tiqueteActualizado = $this->regenerarTiquetePDF($tiquete);
                 $rutaArchivo = str_replace('/storage/', '', $tiqueteActualizado->url_archivo);
             }
-            
+
             $contenido = Storage::get($rutaArchivo);
 
             return [
@@ -260,11 +261,11 @@ class TicketService
             // Mail::to($correo)->send(new TiquetesReservaMail($reserva));
 
             // Por ahora simulamos que se envió correctamente
-            \Log::info("Tiquetes enviados a {$correo} para reserva {$reserva->codigo_unico}");
+            Log::info("Tiquetes enviados a {$correo} para reserva {$reserva->codigo_unico}");
 
             return true;
         } catch (\Exception $e) {
-            \Log::error("Error al enviar tiquetes: " . $e->getMessage());
+            Log::error("Error al enviar tiquetes: " . $e->getMessage());
             return false;
         }
     }

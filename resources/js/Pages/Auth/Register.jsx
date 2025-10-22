@@ -1,5 +1,6 @@
 import { Head, Link, useForm } from '@inertiajs/react';
 import MainLayout from '@/Layouts/MainLayout';
+import useFormNotifications from '@/hooks/useFormNotifications';
 import { 
     UserIcon, 
     EnvelopeIcon, 
@@ -16,9 +17,17 @@ export default function Register() {
         password_confirmation: '',
     });
 
+    const { showSuccess, showError } = useFormNotifications();
+
     const submit = (e) => {
         e.preventDefault();
         post(route('register'), {
+            onSuccess: () => {
+                showSuccess('¡Cuenta creada exitosamente! Bienvenido a AirGuider.');
+            },
+            onError: () => {
+                showError('Error al crear la cuenta. Verifica los campos.');
+            },
             onFinish: () => reset('password', 'password_confirmation'),
         });
     };

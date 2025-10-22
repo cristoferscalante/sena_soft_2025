@@ -1,11 +1,21 @@
 import { Head, Link, router } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
+import useFormNotifications from '@/hooks/useFormNotifications';
 import { BuildingOfficeIcon, PlusIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
 
 export default function AeronavesIndex({ aeronaves }) {
+    const { showSuccess, showError } = useFormNotifications();
+
     const handleDelete = (id) => {
         if (confirm('¿Estás seguro de eliminar esta aeronave?')) {
-            router.delete(route('admin.aeronaves.destroy', id));
+            router.delete(route('admin.aeronaves.destroy', id), {
+                onSuccess: () => {
+                    showSuccess('Aeronave eliminada exitosamente');
+                },
+                onError: () => {
+                    showError('No se pudo eliminar la aeronave');
+                },
+            });
         }
     };
 

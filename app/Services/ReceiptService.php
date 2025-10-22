@@ -55,7 +55,7 @@ class ReceiptService
     protected function prepararDatosRecibo(Pago $pago): array
     {
         $reserva = $pago->reserva;
-        
+
         // Calcular totales y desglose
         $subtotal = $reserva->total;
         $impuestos = $subtotal * 0.19; // IVA 19%
@@ -108,9 +108,9 @@ class ReceiptService
                         'pais' => $vuelo->ciudadDestino->pais,
                     ],
                     'fecha_salida' => $vuelo->fecha_salida->format('Y-m-d'),
-                    'hora_salida' => $vuelo->hora_salida->format('H:i'),
+                    'hora_salida' => substr($vuelo->hora_salida, 0, 5), // HH:MM
                     'fecha_llegada' => $vuelo->fecha_llegada->format('Y-m-d'),
-                    'hora_llegada' => $vuelo->hora_llegada->format('H:i'),
+                    'hora_llegada' => substr($vuelo->hora_llegada, 0, 5), // HH:MM
                 ];
             })->toArray(),
             'pasajeros' => $reserva->pasajeros->map(function ($pasajero) {
@@ -161,7 +161,7 @@ class ReceiptService
     public function descargarRecibo(string $referenciaPago): array
     {
         $pago = Pago::where('referencia', $referenciaPago)->firstOrFail();
-        
+
         $nombreArchivo = "recibo_{$pago->referencia}.pdf";
         $rutaArchivo = "receipts/{$nombreArchivo}";
 
@@ -209,7 +209,7 @@ class ReceiptService
     public function obtenerRecibosReserva(string $codigoReserva): array
     {
         $reserva = Reserva::where('codigo_unico', $codigoReserva)->firstOrFail();
-        
+
         $pagos = Pago::where('reserva_id', $reserva->id)
             ->where('estado', 'aprobado')
             ->orderBy('created_at', 'desc')

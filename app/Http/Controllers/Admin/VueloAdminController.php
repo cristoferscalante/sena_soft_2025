@@ -21,14 +21,37 @@ class VueloAdminController extends Controller
     /**
      * Listar vuelos
      */
-    public function index()
+    public function index(Request $request)
     {
+        $search = $request->input('search');
+
         $vuelos = Vuelo::with(['ciudadOrigen', 'ciudadDestino', 'aeronave.modelo'])
+            ->when($search, function ($query, $search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('codigo_vuelo', 'like', "%{$search}%")
+                      ->orWhereHas('ciudadOrigen', function ($q) use ($search) {
+                          $q->where('nombre', 'like', "%{$search}%")
+                            ->orWhere('codigo_iata', 'like', "%{$search}%");
+                      })
+                      ->orWhereHas('ciudadDestino', function ($q) use ($search) {
+                          $q->where('nombre', 'like', "%{$search}%")
+                            ->orWhere('codigo_iata', 'like', "%{$search}%");
+                      })
+                      ->orWhereHas('aeronave', function ($q) use ($search) {
+                          $q->where('matricula', 'like', "%{$search}%");
+                      })
+                      ->orWhere('estado', 'like', "%{$search}%");
+                });
+            })
             ->orderBy('fecha_salida', 'desc')
-            ->paginate(20);
+            ->paginate(20)
+            ->withQueryString();
 
         return Inertia::render('Admin/Vuelos/Index', [
             'vuelos' => $vuelos,
+            'filters' => [
+                'search' => $search,
+            ],
         ]);
     }
 

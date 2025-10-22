@@ -23,6 +23,7 @@ export default function Search({ ciudades }) {
         fecha_ida: '',
         fecha_regreso: '',
         pasajeros: 1,
+        infantes: 0, // Menores de 3 años
     });
     const [errors, setErrors] = useState({});
 
@@ -38,12 +39,19 @@ export default function Search({ ciudades }) {
 
         // Validaciones
         const newErrors = {};
+        const totalPasajeros = formData.pasajeros + formData.infantes;
+
         if (!formData.origen_id) newErrors.origen_id = 'Selecciona una ciudad de origen';
         if (!formData.destino_id) newErrors.destino_id = 'Selecciona una ciudad de destino';
         if (formData.origen_id === formData.destino_id) newErrors.destino_id = 'El destino debe ser diferente al origen';
         if (!formData.fecha_ida) newErrors.fecha_ida = 'Selecciona la fecha de ida';
         if (tipoViaje === 'ida_regreso' && !formData.fecha_regreso) newErrors.fecha_regreso = 'Selecciona la fecha de regreso';
-        if (formData.pasajeros < 1 || formData.pasajeros > 5) newErrors.pasajeros = 'Entre 1 y 5 pasajeros';
+        if (formData.pasajeros < 1 || formData.pasajeros > 5) newErrors.pasajeros = 'Entre 1 y 5 adultos';
+        if (formData.infantes < 0 || formData.infantes > 2) newErrors.infantes = 'Máximo 2 infantes';
+        if (formData.infantes > formData.pasajeros) newErrors.infantes = 'No puede haber más infantes que adultos';
+        if (totalPasajeros > 5) {
+            newErrors.infantes = 'El total de adultos + infantes no puede superar 5 pasajeros';
+        }
 
         if (Object.keys(newErrors).length > 0) {
             setErrors(newErrors);
@@ -51,7 +59,7 @@ export default function Search({ ciudades }) {
         }
 
         // Enviar búsqueda
-        router.post(route('flights.search'), {
+        router.post(route('flights.search.post'), {
             ...formData,
             tipo_viaje: tipoViaje,
         });
@@ -62,10 +70,11 @@ export default function Search({ ciudades }) {
     useEffect(() => {
         try {
             localStorage.setItem('pasajeros', String(formData.pasajeros));
+            localStorage.setItem('infantes', String(formData.infantes));
         } catch (e) {
             // Silent fail (p. ej. en entornos donde localStorage está deshabilitado)
         }
-    }, [formData.pasajeros]);
+    }, [formData.pasajeros, formData.infantes]);
 
     return (
         <MainLayout>
@@ -217,34 +226,95 @@ export default function Search({ ciudades }) {
                                     )}
                                 </div>
 
-                                {/* Pasajeros */}
-                                <div>
-                                    <label className="flex items-center block mb-2 text-sm font-semibold text-gray-700">
-                                        <UserGroupIcon className="w-5 h-5 mr-2 text-primary-500" />
-                                        Adultos (máximo 5)
-                                    </label>
-                                    <div className="flex items-center space-x-4">
-                                        <button
-                                            type="button"
-                                            onClick={() => setFormData({ ...formData, pasajeros: Math.max(1, formData.pasajeros - 1) })}
-                                            className="flex items-center justify-center w-12 h-12 font-bold text-gray-700 transition-colors bg-gray-200 rounded-full hover:bg-gray-300"
-                                        >
-                                            <MinusIcon className="w-6 h-6" />
-                                        </button>
-                                        <span className="w-16 text-2xl font-bold text-center text-gray-700">
-                                            {formData.pasajeros}
-                                        </span>
-                                        <button
-                                            type="button"
-                                            onClick={() => setFormData({ ...formData, pasajeros: Math.min(5, formData.pasajeros + 1) })}
-                                            className="flex items-center justify-center w-12 h-12 font-bold text-gray-700 transition-colors bg-gray-200 rounded-full hover:bg-gray-300"
-                                        >
-                                            <PlusIcon className="w-6 h-6" />
-                                        </button>
+                                {/* Pasajeros e Infantes en fila */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    {/* Adultos */}
+                                    <div>
+                                        <label className="flex items-center block mb-2 text-sm font-semibold text-gray-700">
+                                            <UserGroupIcon className="w-5 h-5 mr-2 text-primary-500" />
+                                            Adultos
+                                        </label>
+                                        <div className="flex items-center justify-center space-x-4 p-4 bg-gray-50 rounded-lg">
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    const nuevosAdultos = Math.max(1, formData.pasajeros - 1);
+                                                    setFormData({ ...formData, pasajeros: nuevosAdultos });
+                                                }}
+                                                disabled={formData.pasajeros <= 1}
+                                                className="flex items-center justify-center w-10 h-10 font-bold text-gray-700 transition-colors bg-white border-2 border-gray-300 rounded-full hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                <MinusIcon className="w-5 h-5" />
+                                            </button>
+                                            <span className="w-12 text-3xl font-bold text-center text-gray-700">
+                                                {formData.pasajeros}
+                                            </span>
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    const totalActual = formData.pasajeros + formData.infantes;
+                                                    if (totalActual < 5) {
+                                                        setFormData({ ...formData, pasajeros: formData.pasajeros + 1 });
+                                                    }
+                                                }}
+                                                disabled={formData.pasajeros + formData.infantes >= 5}
+                                                className="flex items-center justify-center w-10 h-10 font-bold text-gray-700 transition-colors bg-white border-2 border-gray-300 rounded-full hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                <PlusIcon className="w-5 h-5" />
+                                            </button>
+                                        </div>
+                                        {errors.pasajeros && (
+                                            <p className="mt-1 text-sm text-red-600">{errors.pasajeros}</p>
+                                        )}
                                     </div>
-                                    {errors.pasajeros && (
-                                        <p className="mt-1 text-sm text-red-600">{errors.pasajeros}</p>
-                                    )}
+
+                                    {/* Infantes */}
+                                    <div>
+                                        <label className="flex items-center block mb-2 text-sm font-semibold text-gray-700">
+                                            <UserGroupIcon className="w-5 h-5 mr-2 text-primary-500" />
+                                            Infantes (&lt; 3 años)
+                                        </label>
+                                        <div className="flex items-center justify-center space-x-4 p-4 bg-gray-50 rounded-lg">
+                                            <button
+                                                type="button"
+                                                onClick={() => setFormData({ ...formData, infantes: Math.max(0, formData.infantes - 1) })}
+                                                disabled={formData.infantes <= 0}
+                                                className="flex items-center justify-center w-10 h-10 font-bold text-gray-700 transition-colors bg-white border-2 border-gray-300 rounded-full hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                <MinusIcon className="w-5 h-5" />
+                                            </button>
+                                            <span className="w-12 text-3xl font-bold text-center text-gray-700">
+                                                {formData.infantes}
+                                            </span>
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    const totalActual = formData.pasajeros + formData.infantes;
+                                                    if (totalActual < 5 && formData.infantes < 2 && formData.infantes < formData.pasajeros) {
+                                                        setFormData({ ...formData, infantes: formData.infantes + 1 });
+                                                    }
+                                                }}
+                                                disabled={formData.pasajeros + formData.infantes >= 5 || formData.infantes >= 2 || formData.infantes >= formData.pasajeros}
+                                                className="flex items-center justify-center w-10 h-10 font-bold text-gray-700 transition-colors bg-white border-2 border-gray-300 rounded-full hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                <PlusIcon className="w-5 h-5" />
+                                            </button>
+                                        </div>
+                                        {errors.infantes && (
+                                            <p className="mt-1 text-sm text-red-600">{errors.infantes}</p>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Nota informativa */}
+                                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                                    <p className="text-sm text-blue-800">
+                                        <strong>Total de pasajeros:</strong> {formData.pasajeros + formData.infantes} de 5 máximo
+                                        <br />
+                                        <span className="text-xs text-blue-700">
+                                            Los infantes viajan en brazos, no pagan pasaje ni ocupan asiento
+                                        </span>
+                                    </p>
                                 </div>
 
                                 {/* Botón de búsqueda */}

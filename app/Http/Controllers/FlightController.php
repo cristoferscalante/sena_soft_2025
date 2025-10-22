@@ -36,6 +36,7 @@ class FlightController extends Controller
             'fecha_ida' => 'required|date|after_or_equal:today|before_or_equal:' . now()->addDays(60)->toDateString(),
             'fecha_regreso' => 'nullable|date|after_or_equal:fecha_ida|before_or_equal:' . now()->addDays(60)->toDateString(),
             'pasajeros' => 'required|integer|min:1|max:5',
+            'infantes' => 'nullable|integer|min:0|max:2',
             'tipo_viaje' => 'required|in:ida,ida_regreso',
         ]);
 
