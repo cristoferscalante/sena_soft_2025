@@ -38,9 +38,10 @@ Route::get('/terminos-condiciones', function () {
 // Búsqueda de vuelos
 Route::prefix('vuelos')->name('flights.')->group(function () {
     Route::get('/', [FlightController::class, 'index'])->name('index');
-    Route::post('/buscar', [FlightController::class, 'search'])->name('search');
-    Route::get('/{id}', [FlightController::class, 'show'])->name('show');
+    Route::get('/buscar', [FlightController::class, 'index'])->name('search'); // Alias para mostrar formulario
+    Route::post('/buscar', [FlightController::class, 'search'])->name('search.post'); // Procesar búsqueda
     Route::get('/api/ciudades', [FlightController::class, 'autocompleteCiudades'])->name('ciudades');
+    Route::get('/{id}', [FlightController::class, 'show'])->where('id', '[0-9]+')->name('show'); // Solo números
 });
 
 // Selección de asientos
@@ -93,17 +94,17 @@ Route::prefix('admin')->name('admin.')->group(function () {
     // Login de admin
     Route::get('/login', [App\Http\Controllers\Admin\AdminAuthController::class, 'showLogin'])->name('login');
     Route::post('/login', [App\Http\Controllers\Admin\AdminAuthController::class, 'login'])->name('login.post');
-    
+
     // Rutas protegidas de admin
     Route::middleware(['auth', 'admin'])->group(function () {
         Route::get('/dashboard', [App\Http\Controllers\Admin\DashboardAdminController::class, 'index'])->name('dashboard');
         Route::post('/logout', [App\Http\Controllers\Admin\AdminAuthController::class, 'logout'])->name('logout');
-        
+
         // Gestión de recursos
         Route::resource('vuelos', App\Http\Controllers\Admin\VueloAdminController::class);
         Route::resource('ciudades', App\Http\Controllers\Admin\CiudadAdminController::class);
         Route::resource('aeronaves', App\Http\Controllers\Admin\AeronaveAdminController::class);
-        
+
         // Reservas (solo lectura)
         Route::get('/reservas', [App\Http\Controllers\Admin\ReservaAdminController::class, 'index'])->name('reservas.index');
         Route::get('/reservas/{id}', [App\Http\Controllers\Admin\ReservaAdminController::class, 'show'])->name('reservas.show');

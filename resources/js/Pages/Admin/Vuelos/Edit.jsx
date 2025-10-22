@@ -1,5 +1,6 @@
 import { Head, useForm, Link } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
+import useFormNotifications from '@/hooks/useFormNotifications';
 import {
     PaperAirplaneIcon,
     ArrowLeftIcon,
@@ -19,9 +20,18 @@ export default function EditVuelo({ vuelo, ciudades, aeronaves }) {
         estado: vuelo.estado || 'programado',
     });
 
+    const { showSuccess, showError } = useFormNotifications();
+
     const submit = (e) => {
         e.preventDefault();
-        put(route('admin.vuelos.update', vuelo.id));
+        put(route('admin.vuelos.update', vuelo.id), {
+            onSuccess: () => {
+                showSuccess('Vuelo actualizado exitosamente');
+            },
+            onError: () => {
+                showError('Error al actualizar el vuelo. Verifica los campos.');
+            },
+        });
     };
 
     return (

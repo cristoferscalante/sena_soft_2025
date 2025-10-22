@@ -1,7 +1,8 @@
 import { Head, Link, useForm } from '@inertiajs/react';
 import MainLayout from '@/Layouts/MainLayout';
-import { 
-    EnvelopeIcon, 
+import useFormNotifications from '@/hooks/useFormNotifications';
+import {
+    EnvelopeIcon,
     LockClosedIcon,
     UserIcon,
     ArrowRightIcon
@@ -14,9 +15,17 @@ export default function Login({ status, canResetPassword }) {
         remember: false,
     });
 
+    const { showSuccess, showError } = useFormNotifications();
+
     const submit = (e) => {
         e.preventDefault();
         post(route('login'), {
+            onSuccess: () => {
+                showSuccess('¡Bienvenido de vuelta!');
+            },
+            onError: () => {
+                showError('Credenciales incorrectas. Verifica tu email y contraseña.');
+            },
             onFinish: () => reset('password'),
         });
     };

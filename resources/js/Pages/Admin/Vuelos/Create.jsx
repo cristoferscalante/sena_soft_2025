@@ -1,6 +1,7 @@
 import { Head, useForm, Link } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
-import { 
+import useFormNotifications from '@/hooks/useFormNotifications';
+import {
     PaperAirplaneIcon,
     ArrowLeftIcon,
     CheckIcon
@@ -19,9 +20,18 @@ export default function CreateVuelo({ ciudades, aeronaves }) {
         precio_base: '',
     });
 
+    const { showSuccess, showError } = useFormNotifications();
+
     const submit = (e) => {
         e.preventDefault();
-        post(route('admin.vuelos.store'));
+        post(route('admin.vuelos.store'), {
+            onSuccess: () => {
+                showSuccess('Vuelo creado exitosamente');
+            },
+            onError: () => {
+                showError('Error al crear el vuelo. Verifica los campos.');
+            },
+        });
     };
 
     return (

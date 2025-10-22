@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Log;
 
 class BookingController extends Controller
 {
@@ -23,6 +24,16 @@ class BookingController extends Controller
     {
         $vuelosSeleccionados = $request->session()->get('vuelos_seleccionados', []);
         $asientosSeleccionados = $request->session()->get('asientos_seleccionados', []);
+        $cantidadAdultos = $request->session()->get('cantidad_adultos');
+        $cantidadInfantes = $request->session()->get('cantidad_infantes');
+
+        // Si no hay datos en sesión, usar valores por defecto
+        if ($cantidadAdultos === null) {
+            $cantidadAdultos = count($asientosSeleccionados);
+        }
+        if ($cantidadInfantes === null) {
+            $cantidadInfantes = 0;
+        }
 
         if (empty($vuelosSeleccionados)) {
             return Inertia::render('Flights/Search')->with('error', 'Debe seleccionar al menos un vuelo');
@@ -34,14 +45,28 @@ class BookingController extends Controller
             $vuelosDetalles[] = $this->flightService->obtenerDetallesVuelo($vueloId);
         }
 
+        $totalPasajeros = (int)$cantidadAdultos + (int)$cantidadInfantes;
+
+        // Log temporal para depuración
+        Log::info('Datos de pasajeros', [
+            'adultos' => $cantidadAdultos,
+            'infantes' => $cantidadInfantes,
+            'total' => $totalPasajeros,
+            'asientos' => count($asientosSeleccionados)
+        ]);
+
         return Inertia::render('Booking/Passengers', [
             'vuelos' => $vuelosDetalles,
             'asientos' => $asientosSeleccionados,
-            'cantidad_pasajeros' => count($asientosSeleccionados),
+            'cantidad_pasajeros' => $totalPasajeros,
+            'cantidad_adultos' => (int)$cantidadAdultos,
+            'cantidad_infantes' => (int)$cantidadInfantes,
         ]);
     }
 
     /**
+     * Crear reserva
+     */    /**
      * Crear reserva
      */
     public function store(Request $request): RedirectResponse
@@ -60,7 +85,6 @@ class BookingController extends Controller
             'pasajeros.*.genero' => 'required|in:M,F,Otro',
             'pasajeros.*.tipo_documento' => 'required|in:CC,CE,Pasaporte,TI,RC',
             'pasajeros.*.numero_documento' => 'required|string|max:50',
-            'pasajeros.*.es_infante' => 'boolean',
             'pasajeros.*.celular' => 'required|string|max:20',
             'pasajeros.*.correo' => 'required|email|max:100',
             'vuelos' => 'required|array|min:1',
@@ -73,7 +97,7 @@ class BookingController extends Controller
         try {
             // Validar datos de reserva
             $validacion = $this->bookingService->validarDatosReserva($validated);
-            
+
             if (!$validacion['valido']) {
                 return back()->withErrors($validacion['errores'])->withInput();
             }

@@ -1,5 +1,6 @@
 import { Head, useForm, Link } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
+import useFormNotifications from '@/hooks/useFormNotifications';
 import { BuildingOfficeIcon, ArrowLeftIcon, CheckIcon } from '@heroicons/react/24/outline';
 
 export default function EditAeronave({ aeronave, modelos }) {
@@ -10,9 +11,18 @@ export default function EditAeronave({ aeronave, modelos }) {
         estado: aeronave.estado || 'activo',
     });
 
+    const { showSuccess, showError } = useFormNotifications();
+
     const submit = (e) => {
         e.preventDefault();
-        put(route('admin.aeronaves.update', aeronave.id));
+        put(route('admin.aeronaves.update', aeronave.id), {
+            onSuccess: () => {
+                showSuccess('Aeronave actualizada exitosamente');
+            },
+            onError: () => {
+                showError('Error al actualizar la aeronave. Verifica los campos.');
+            },
+        });
     };
 
     return (
