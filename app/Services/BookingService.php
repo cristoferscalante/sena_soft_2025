@@ -80,7 +80,7 @@ class BookingService
             // 6. Reservar asientos si se proporcionan
             if (isset($datos['asientos']) && !empty($datos['asientos'])) {
                 $resultado = $this->seatService->reservarAsientos($datos['asientos'], $reserva->id);
-                
+
                 if (!$resultado['success']) {
                     throw new \RuntimeException('Error al reservar asientos: ' . json_encode($resultado['asientos_fallidos']));
                 }

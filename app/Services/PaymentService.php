@@ -154,7 +154,7 @@ class PaymentService
     protected function detectarTipoTarjeta(string $numeroTarjeta): string
     {
         $numeroTarjeta = preg_replace('/\s+/', '', $numeroTarjeta);
-        
+
         if (preg_match('/^4/', $numeroTarjeta)) {
             return 'Visa';
         } elseif (preg_match('/^5[1-5]/', $numeroTarjeta)) {

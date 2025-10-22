@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Aeronave;
 use App\Models\ModeloAeronave;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 
 class AeronaveAdminController extends Controller
@@ -68,7 +69,11 @@ class AeronaveAdminController extends Controller
             'estado' => 'required|in:activo,mantenimiento,fuera_servicio',
         ]);
 
+        Log::info('Actualizando aeronave:', ['id' => $id, 'datos' => $validated]);
+
         $aeronave->update($validated);
+
+        Log::info('Aeronave actualizada:', $aeronave->toArray());
 
         return redirect()->route('admin.aeronaves.index')
             ->with('success', 'Aeronave actualizada exitosamente');
@@ -77,7 +82,7 @@ class AeronaveAdminController extends Controller
     public function destroy(int $id)
     {
         $aeronave = Aeronave::findOrFail($id);
-        
+
         if ($aeronave->vuelos()->exists()) {
             return back()->withErrors([
                 'error' => 'No se puede eliminar una aeronave con vuelos asociados'
