@@ -52,16 +52,16 @@ class TicketService
         // Datos del tiquete
         $datosTiquete = $this->prepararDatosTiquete($reserva, $pasajero, $vuelo, $asiento);
 
-        // Generar HTML del tiquete
-        $html = view('tickets.pdf', $datosTiquete)->render();
+        // Generar PDF usando dompdf
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('tickets.pdf', $datosTiquete);
+        $pdf->setPaper('a4', 'portrait');
 
-        // En producción, aquí se usaría una librería como Dompdf o Snappy
-        // Por ahora, simulamos guardando el HTML
+        // Generar nombre único para el archivo
         $nombreArchivo = "tiquete_{$reserva->codigo_unico}_{$pasajero->id}_{$vuelo->id}.pdf";
         $rutaArchivo = "tickets/{$nombreArchivo}";
 
-        // Guardar "PDF" (por ahora HTML como simulación)
-        Storage::put($rutaArchivo, $html);
+        // Guardar PDF real en storage
+        Storage::put($rutaArchivo, $pdf->output());
 
         // Crear registro de tiquete
         $tiquete = Tiquete::create([
@@ -192,8 +192,17 @@ class TicketService
         $tiquete = Tiquete::findOrFail($tiqueteId);
 
         if ($tiquete->formato === 'pdf') {
-            // Obtener archivo del storage
-            $contenido = Storage::get(str_replace('/storage/', '', $tiquete->url_archivo));
+            // Extraer la ruta correcta del archivo
+            $rutaArchivo = str_replace('/storage/', '', $tiquete->url_archivo);
+            
+            // Verificar si el archivo existe
+            if (!Storage::exists($rutaArchivo)) {
+                // Si no existe, regenerar el PDF
+                $tiqueteActualizado = $this->regenerarTiquetePDF($tiquete);
+                $rutaArchivo = str_replace('/storage/', '', $tiqueteActualizado->url_archivo);
+            }
+            
+            $contenido = Storage::get($rutaArchivo);
 
             return [
                 'tipo' => 'pdf',
@@ -207,6 +216,36 @@ class TicketService
                 'nombre_archivo' => "tiquete_{$tiquete->codigo_tiquete}.json",
             ];
         }
+    }
+
+    /**
+     * Regenerar PDF de tiquete si no existe
+     */
+    protected function regenerarTiquetePDF(Tiquete $tiquete): Tiquete
+    {
+        $reserva = $tiquete->reserva;
+        $pasajero = $tiquete->pasajero;
+        $vuelo = $tiquete->vuelo;
+        $asiento = $tiquete->asiento;
+
+        // Preparar datos del tiquete
+        $datosTiquete = $this->prepararDatosTiquete($reserva, $pasajero, $vuelo, $asiento);
+
+        // Generar PDF usando dompdf
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('tickets.pdf', $datosTiquete);
+        $pdf->setPaper('a4', 'portrait');
+
+        // Generar nombre único para el archivo
+        $nombreArchivo = "tiquete_{$reserva->codigo_unico}_{$pasajero->id}_{$vuelo->id}.pdf";
+        $rutaArchivo = "tickets/{$nombreArchivo}";
+
+        // Guardar PDF real en storage
+        Storage::put($rutaArchivo, $pdf->output());
+
+        // Actualizar la URL del archivo en el tiquete
+        $tiquete->update(['url_archivo' => Storage::url($rutaArchivo)]);
+
+        return $tiquete;
     }
 
     /**

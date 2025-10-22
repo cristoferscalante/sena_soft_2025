@@ -32,8 +32,6 @@ class Vuelo extends Model
     protected $casts = [
         'fecha_salida' => 'date',
         'fecha_llegada' => 'date',
-        'hora_salida' => 'datetime:H:i:s',
-        'hora_llegada' => 'datetime:H:i:s',
         'precio_base' => 'decimal:2',
         'capacidad_total' => 'integer',
         'asientos_disponibles' => 'integer',

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Services\PaymentService;
 use App\Services\BookingService;
 use App\Services\TicketService;
+use App\Services\ReceiptService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -15,7 +16,8 @@ class PaymentController extends Controller
     public function __construct(
         protected PaymentService $paymentService,
         protected BookingService $bookingService,
-        protected TicketService $ticketService
+        protected TicketService $ticketService,
+        protected ReceiptService $receiptService
     ) {}
 
     /**
@@ -52,10 +54,13 @@ class PaymentController extends Controller
             if ($resultado['success']) {
                 // Generar tiquetes
                 $this->ticketService->generarTiquetes($request->reserva_id, 'pdf');
+                
+                // Generar recibo de pago
+                $this->receiptService->generarReciboPDF($resultado['pago_id']);
 
                 // Obtener reserva y pago para la página de agradecimiento
                 $reserva = $this->bookingService->obtenerResumenReserva($request->reserva_id);
-                
+
                 return redirect()->route('booking.thankyou', ['reserva_id' => $request->reserva_id])
                     ->with('success', $resultado['mensaje']);
             } else {
@@ -87,6 +92,9 @@ class PaymentController extends Controller
 
             if ($resultado['success']) {
                 $this->ticketService->generarTiquetes($request->reserva_id, 'pdf');
+                
+                // Generar recibo de pago
+                $this->receiptService->generarReciboPDF($resultado['pago_id']);
 
                 return redirect()->route('booking.thankyou', ['reserva_id' => $request->reserva_id])
                     ->with('success', $resultado['mensaje']);
@@ -118,6 +126,9 @@ class PaymentController extends Controller
 
             if ($resultado['success']) {
                 $this->ticketService->generarTiquetes($request->reserva_id, 'pdf');
+                
+                // Generar recibo de pago
+                $this->receiptService->generarReciboPDF($resultado['pago_id']);
 
                 return redirect()->route('booking.thankyou', ['reserva_id' => $request->reserva_id])
                     ->with('success', $resultado['mensaje']);

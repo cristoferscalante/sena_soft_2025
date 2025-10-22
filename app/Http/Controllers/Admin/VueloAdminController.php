@@ -8,6 +8,7 @@ use App\Models\Ciudad;
 use App\Models\Aeronave;
 use App\Services\SeatService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use Carbon\Carbon;
 
@@ -64,7 +65,7 @@ class VueloAdminController extends Controller
 
         // Obtener capacidad del modelo de aeronave
         $aeronave = Aeronave::with('modelo')->find($request->aeronave_id);
-        
+
         $vuelo = Vuelo::create([
             ...$validated,
             'capacidad_total' => $aeronave->modelo->capacidad_total,
@@ -114,19 +115,21 @@ class VueloAdminController extends Controller
             'estado' => 'required|in:programado,en_vuelo,completado,cancelado',
         ]);
 
+        Log::info('Datos validados para actualización de vuelo:', $validated);
+
         $vuelo->update($validated);
+
+        Log::info('Vuelo actualizado:', $vuelo->toArray());
 
         return redirect()->route('admin.vuelos.index')
             ->with('success', 'Vuelo actualizado exitosamente');
-    }
-
-    /**
+    }    /**
      * Eliminar vuelo
      */
     public function destroy(int $id)
     {
         $vuelo = Vuelo::findOrFail($id);
-        
+
         // Solo permitir eliminar si no tiene reservas confirmadas
         if ($vuelo->asientos()->where('estado', 'emitido')->exists()) {
             return back()->withErrors([
