@@ -72,6 +72,7 @@ Route::prefix('pagos')->name('payment.')->group(function () {
 Route::prefix('tiquetes')->name('tickets.')->group(function () {
     Route::get('/{id}/descargar', [TicketController::class, 'download'])->name('download');
     Route::get('/reserva/{codigo}', [TicketController::class, 'getTiquetesReserva'])->name('reserva');
+    Route::get('/reserva/{codigo}/pdf', [TicketController::class, 'downloadReservaPDF'])->name('reserva.pdf');
     Route::post('/enviar-email', [TicketController::class, 'sendEmail'])->name('email');
     Route::get('/validar/{codigo}', [TicketController::class, 'validate'])->name('validate');
 });

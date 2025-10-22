@@ -10,6 +10,28 @@ import {
 } from '@heroicons/react/24/outline';
 
 export default function ThankYou({ reserva, pago }) {
+    const handleDownloadTickets = () => {
+        // Descargar directamente el PDF de tiquetes
+        const url = route('tickets.reserva.pdf', { codigo: reserva.codigo_reserva });
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `tiquetes_${reserva.codigo_reserva}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
+    const handleDownloadReceipt = () => {
+        // Descargar directamente el PDF del recibo
+        const url = route('receipts.download', { referencia: pago.referencia });
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `recibo_${pago.referencia}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
     return (
         <MainLayout>
             <Head title="¡Gracias por tu Compra!" />
@@ -134,23 +156,23 @@ export default function ThankYou({ reserva, pago }) {
                         </h3>
 
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                            <Link
-                                href={route('booking.show', { codigo: reserva.codigo_reserva })}
+                            <button
+                                onClick={handleDownloadTickets}
+                                type="button"
                                 className="flex items-center justify-center space-x-3 bg-secondary-500 hover:bg-secondary-600 text-white font-bold py-4 px-6 rounded-lg transition-colors shadow-lg"
                             >
                                 <ArrowDownTrayIcon className="w-6 h-6" />
                                 <span>Descargar Tiquetes</span>
-                            </Link>
+                            </button>
 
-                            <a
-                                href={route('receipts.download', { referencia: pago.referencia })}
-                                target="_blank"
-                                rel="noopener noreferrer"
+                            <button
+                                onClick={handleDownloadReceipt}
+                                type="button"
                                 className="flex items-center justify-center space-x-3 bg-accent-500 hover:bg-accent-600 text-white font-bold py-4 px-6 rounded-lg transition-colors shadow-lg"
                             >
                                 <ArrowDownTrayIcon className="w-6 h-6" />
                                 <span>Descargar Recibo</span>
-                            </a>
+                            </button>
 
                             <Link
                                 href="/"
