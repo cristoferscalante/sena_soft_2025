@@ -8,7 +8,7 @@
         body { font-family: Arial, sans-serif; font-size: 12px; color: #333; }
         .page { page-break-after: always; padding: 20px; }
         .page:last-child { page-break-after: auto; }
-        
+
         /* Portada */
         .cover { text-align: center; padding-top: 100px; }
         .cover h1 { font-size: 36px; color: #2563eb; margin-bottom: 20px; }
@@ -16,32 +16,32 @@
         .cover .info { background: #f3f4f6; padding: 20px; margin: 30px auto; max-width: 400px; border-radius: 8px; }
         .cover .info-row { margin: 10px 0; }
         .cover .label { font-weight: bold; color: #6b7280; }
-        
+
         /* Tiquete */
         .ticket { border: 2px solid #e5e7eb; border-radius: 8px; padding: 20px; margin: 20px 0; }
         .ticket-header { background: #2563eb; color: white; padding: 15px; margin: -20px -20px 20px -20px; border-radius: 6px 6px 0 0; text-align: center; font-size: 16px; font-weight: bold; }
-        
+
         .section { margin: 20px 0; }
         .section-title { background: #f3f4f6; padding: 8px; font-weight: bold; margin-bottom: 10px; border-left: 4px solid #2563eb; }
-        
+
         .row { padding: 8px 0; border-bottom: 1px solid #e5e7eb; }
         .row:last-child { border-bottom: none; }
         .label { font-weight: bold; color: #6b7280; display: inline-block; width: 40%; }
         .value { color: #1f2937; }
-        
+
         .route { text-align: center; margin: 20px 0; }
         .route-cities { display: flex; justify-content: space-around; align-items: center; }
         .city { text-align: center; }
         .city-code { font-size: 28px; font-weight: bold; color: #2563eb; }
         .city-name { font-size: 11px; color: #6b7280; margin-top: 5px; }
         .arrow { font-size: 24px; color: #9ca3af; margin: 0 20px; }
-        
+
         .seat-box { background: #fef3c7; border: 2px solid #f59e0b; padding: 20px; text-align: center; border-radius: 8px; margin: 15px 0; }
         .seat-number { font-size: 32px; font-weight: bold; color: #b45309; }
-        
+
         .qr { text-align: center; margin: 20px 0; }
         .qr img { width: 150px; height: 150px; }
-        
+
         .footer { margin-top: 30px; padding-top: 15px; border-top: 2px solid #e5e7eb; text-align: center; font-size: 10px; color: #6b7280; }
     </style>
 </head>
@@ -51,9 +51,9 @@
         <div class="cover">
             <h1>✈️ AirGuider</h1>
             <p style="font-size: 18px; color: #6b7280;">Tiquetes Electrónicos</p>
-            
+
             <div class="code">{{ $reserva->codigo_unico }}</div>
-            
+
             <div class="info">
                 <div class="info-row">
                     <span class="label">Pasajero Principal:</span><br>
@@ -109,7 +109,7 @@
                     <span class="label">Código:</span>
                     <span class="value" style="font-weight: bold;">{{ $tiquete['vuelo']['codigo'] }}</span>
                 </div>
-                
+
                 <div class="route">
                     <table width="100%" cellpadding="10">
                         <tr>
