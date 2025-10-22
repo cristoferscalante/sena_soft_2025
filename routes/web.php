@@ -6,6 +6,7 @@ use App\Http\Controllers\SeatController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\TicketController;
+use App\Http\Controllers\ReceiptController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -72,6 +73,14 @@ Route::prefix('tiquetes')->name('tickets.')->group(function () {
     Route::get('/reserva/{codigo}', [TicketController::class, 'getTiquetesReserva'])->name('reserva');
     Route::post('/enviar-email', [TicketController::class, 'sendEmail'])->name('email');
     Route::get('/validar/{codigo}', [TicketController::class, 'validate'])->name('validate');
+});
+
+// Recibos de pago
+Route::prefix('recibos')->name('receipts.')->group(function () {
+    Route::get('/{referencia}/descargar', [ReceiptController::class, 'download'])->name('download');
+    Route::get('/{referencia}/ver', [ReceiptController::class, 'view'])->name('view');
+    Route::get('/{referencia}/info', [ReceiptController::class, 'info'])->name('info');
+    Route::get('/reserva/{codigo}', [ReceiptController::class, 'listByReservation'])->name('reserva');
 });
 
 /*

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Ciudad;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 
 class CiudadAdminController extends Controller
@@ -58,7 +59,11 @@ class CiudadAdminController extends Controller
             'pais' => 'required|string|max:100',
         ]);
 
+        Log::info('Actualizando ciudad:', ['id' => $id, 'datos' => $validated]);
+
         $ciudad->update($validated);
+
+        Log::info('Ciudad actualizada:', $ciudad->toArray());
 
         return redirect()->route('admin.ciudades.index')
             ->with('success', 'Ciudad actualizada exitosamente');
@@ -67,7 +72,7 @@ class CiudadAdminController extends Controller
     public function destroy(int $id)
     {
         $ciudad = Ciudad::findOrFail($id);
-        
+
         if ($ciudad->vuelosOrigen()->exists() || $ciudad->vuelosDestino()->exists()) {
             return back()->withErrors([
                 'error' => 'No se puede eliminar una ciudad con vuelos asociados'
