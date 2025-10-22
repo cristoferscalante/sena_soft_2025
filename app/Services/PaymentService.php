@@ -19,55 +19,38 @@ class PaymentService
      * Simular procesamiento de pago
      * 80% de probabilidad de éxito, 20% de rechazo
      */
-    public function simularPago(int $reservaId, array $datosPago): array
+    private function simularPago(int $reservaId, array $datosPago): array
     {
         $reserva = Reserva::findOrFail($reservaId);
-
-        // Validar que la reserva esté pendiente
-        if ($reserva->estado !== 'pendiente') {
-            throw new \RuntimeException("La reserva no está en estado pendiente");
-        }
-
-        // Validar que no haya expirado
-        if ($reserva->estaExpirada()) {
-            throw new \RuntimeException("La reserva ha expirado");
-        }
-
-        // Simular procesamiento (80% aprobado, 20% rechazado)
+        
+        // Simular pago con 80% de éxito
         $esAprobado = (rand(1, 100) <= 80);
-
+        
         return DB::transaction(function () use ($reserva, $datosPago, $esAprobado) {
-            // Crear registro de pago
+            // Crear pago
             $pago = Pago::create([
                 'reserva_id' => $reserva->id,
                 'metodo_pago' => $datosPago['metodo_pago'],
                 'estado' => $esAprobado ? 'aprobado' : 'rechazado',
                 'monto' => $reserva->total,
-                'datos_pago_json' => $this->sanitizarDatosPago($datosPago),
+                'datos_pago_json' => [
+                    'ultimos_digitos' => substr(preg_replace('/\D/', '', $datosPago['numero_tarjeta'] ?? ''), -4),
+                    'tipo_tarjeta' => $this->detectarTipoTarjeta($datosPago['numero_tarjeta'] ?? ''),
+                ],
+                'fecha_pago' => now(),
             ]);
 
             if ($esAprobado) {
-                // Actualizar estado de reserva
                 $reserva->update(['estado' => 'pagada']);
-
-                // Confirmar reserva (cambiar asientos a "emitido")
                 $this->bookingService->confirmarReserva($reserva->id);
-
-                return [
-                    'success' => true,
-                    'mensaje' => '¡Pago aprobado exitosamente!',
-                    'referencia' => $pago->referencia,
-                    'pago_id' => $pago->id,
-                    'reserva_codigo' => $reserva->codigo_unico,
-                ];
-            } else {
-                return [
-                    'success' => false,
-                    'mensaje' => 'El pago fue rechazado. Por favor, intente con otro método de pago.',
-                    'referencia' => $pago->referencia,
-                    'pago_id' => $pago->id,
-                ];
             }
+
+            return [
+                'success' => $esAprobado,
+                'mensaje' => $esAprobado ? '¡Pago aprobado exitosamente!' : 'Pago rechazado. Por favor, intente con otro método de pago.',
+                'referencia' => $pago->referencia,
+                'pago_id' => $pago->id,
+            ];
         });
     }
 
@@ -76,14 +59,16 @@ class PaymentService
      */
     public function procesarTarjetaCredito(int $reservaId, array $datosTarjeta): array
     {
-        // Validar datos de tarjeta
-        $this->validarDatosTarjeta($datosTarjeta);
+        if (!$this->validarTarjeta($datosTarjeta)) {
+            return [
+                'success' => false,
+                'mensaje' => 'Datos de tarjeta inválidos'
+            ];
+        }
 
         return $this->simularPago($reservaId, [
             'metodo_pago' => 'tarjeta_credito',
-            'numero_tarjeta' => substr($datosTarjeta['numero_tarjeta'], -4), // Solo últimos 4 dígitos
-            'titular' => $datosTarjeta['titular'],
-            'tipo_tarjeta' => $this->detectarTipoTarjeta($datosTarjeta['numero_tarjeta']),
+            'numero_tarjeta' => $datosTarjeta['numero_tarjeta']
         ]);
     }
 
@@ -92,13 +77,16 @@ class PaymentService
      */
     public function procesarTarjetaDebito(int $reservaId, array $datosTarjeta): array
     {
-        $this->validarDatosTarjeta($datosTarjeta);
+        if (!$this->validarTarjeta($datosTarjeta)) {
+            return [
+                'success' => false,
+                'mensaje' => 'Datos de tarjeta inválidos'
+            ];
+        }
 
         return $this->simularPago($reservaId, [
             'metodo_pago' => 'tarjeta_debito',
-            'numero_tarjeta' => substr($datosTarjeta['numero_tarjeta'], -4),
-            'titular' => $datosTarjeta['titular'],
-            'tipo_tarjeta' => $this->detectarTipoTarjeta($datosTarjeta['numero_tarjeta']),
+            'numero_tarjeta' => $datosTarjeta['numero_tarjeta']
         ]);
     }
 
@@ -107,45 +95,20 @@ class PaymentService
      */
     public function procesarPSE(int $reservaId, array $datosPSE): array
     {
-        // Validar datos PSE
-        if (empty($datosPSE['banco']) || empty($datosPSE['tipo_cuenta']) || empty($datosPSE['tipo_persona'])) {
-            throw new \InvalidArgumentException('Datos de PSE incompletos');
-        }
-
         return $this->simularPago($reservaId, [
             'metodo_pago' => 'pse',
-            'banco' => $datosPSE['banco'],
-            'tipo_cuenta' => $datosPSE['tipo_cuenta'],
-            'tipo_persona' => $datosPSE['tipo_persona'],
+            'banco' => $datosPSE['banco'] ?? 'desconocido'
         ]);
     }
 
     /**
-     * Validar datos de tarjeta
+     * Validar datos básicos de tarjeta
      */
-    protected function validarDatosTarjeta(array $datosTarjeta): void
+    private function validarTarjeta(array $datosTarjeta): bool
     {
-        if (empty($datosTarjeta['numero_tarjeta'])) {
-            throw new \InvalidArgumentException('Número de tarjeta requerido');
-        }
-
-        if (empty($datosTarjeta['titular'])) {
-            throw new \InvalidArgumentException('Nombre del titular requerido');
-        }
-
-        if (empty($datosTarjeta['fecha_expiracion'])) {
-            throw new \InvalidArgumentException('Fecha de expiración requerida');
-        }
-
-        if (empty($datosTarjeta['cvv'])) {
-            throw new \InvalidArgumentException('CVV requerido');
-        }
-
-        // Validar formato de tarjeta (Luhn algorithm simplificado)
-        $numeroTarjeta = preg_replace('/\s+/', '', $datosTarjeta['numero_tarjeta']);
-        if (strlen($numeroTarjeta) < 13 || strlen($numeroTarjeta) > 19) {
-            throw new \InvalidArgumentException('Número de tarjeta inválido');
-        }
+        // Validación mínima: número entre 13-19 dígitos
+        $numero = preg_replace('/\D/', '', $datosTarjeta['numero_tarjeta'] ?? '');
+        return strlen($numero) >= 13 && strlen($numero) <= 19;
     }
 
     /**
@@ -167,69 +130,11 @@ class PaymentService
     }
 
     /**
-     * Sanitizar datos de pago (no guardar información sensible completa)
-     */
-    protected function sanitizarDatosPago(array $datosPago): array
-    {
-        $sanitizado = $datosPago;
-
-        // Remover información sensible si existe
-        if (isset($sanitizado['numero_tarjeta'])) {
-            // Solo guardar últimos 4 dígitos
-            $sanitizado['numero_tarjeta'] = '****' . substr($sanitizado['numero_tarjeta'], -4);
-        }
-
-        unset($sanitizado['cvv']);
-        unset($sanitizado['password']);
-
-        return $sanitizado;
-    }
-
-    /**
      * Obtener información de un pago
      */
     public function obtenerPago(int $pagoId): ?Pago
     {
         return Pago::with('reserva')->find($pagoId);
-    }
-
-    /**
-     * Obtener historial de pagos de una reserva
-     */
-    public function obtenerHistorialPagos(int $reservaId): array
-    {
-        return Pago::where('reserva_id', $reservaId)
-            ->orderBy('created_at', 'desc')
-            ->get()
-            ->map(function ($pago) {
-                return [
-                    'id' => $pago->id,
-                    'metodo_pago' => $pago->metodo_pago,
-                    'estado' => $pago->estado,
-                    'monto' => (float) $pago->monto,
-                    'referencia' => $pago->referencia,
-                    'fecha' => $pago->fecha_pago->format('d/m/Y H:i:s'),
-                ];
-            })
-            ->toArray();
-    }
-
-    /**
-     * Reintentar pago fallido
-     */
-    public function reintentarPago(int $pagoId, array $nuevosDatosPago): array
-    {
-        $pagoAnterior = Pago::findOrFail($pagoId);
-
-        if ($pagoAnterior->estado !== 'rechazado') {
-            throw new \RuntimeException('Solo se pueden reintentar pagos rechazados');
-        }
-
-        // Marcar pago anterior como anulado
-        $pagoAnterior->update(['estado' => 'anulado']);
-
-        // Intentar nuevo pago
-        return $this->simularPago($pagoAnterior->reserva_id, $nuevosDatosPago);
     }
 }
 

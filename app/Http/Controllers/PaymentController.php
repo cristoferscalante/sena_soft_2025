@@ -28,7 +28,8 @@ class PaymentController extends Controller
         $reservaData = $this->bookingService->obtenerResumenReserva($reserva);
 
         return Inertia::render('Payment/Simulate', [
-            'reserva' => $reservaData,
+            // incluir el id numérico de la reserva para que el frontend pueda enviarlo
+            'reserva' => array_merge($reservaData, ['id' => $reserva]),
         ]);
     }
 
@@ -67,7 +68,8 @@ class PaymentController extends Controller
                 return back()->withErrors(['error' => $resultado['mensaje']])->withInput();
             }
         } catch (\Exception $e) {
-            return back()->withErrors(['error' => 'Error al procesar el pago: ' . $e->getMessage()])->withInput();
+            logger()->error('Error procesando pago por tarjeta de crédito', ['exception' => $e]);
+            return back()->withErrors(['error' => 'Ocurrió un error al procesar el pago. Por favor intenta nuevamente o contacta soporte.'])->withInput();
         }
     }
 
@@ -102,7 +104,8 @@ class PaymentController extends Controller
                 return back()->withErrors(['error' => $resultado['mensaje']])->withInput();
             }
         } catch (\Exception $e) {
-            return back()->withErrors(['error' => 'Error al procesar el pago: ' . $e->getMessage()])->withInput();
+            logger()->error('Error procesando pago por tarjeta de débito', ['exception' => $e]);
+            return back()->withErrors(['error' => 'Ocurrió un error al procesar el pago. Por favor intenta nuevamente o contacta soporte.'])->withInput();
         }
     }
 
@@ -136,7 +139,8 @@ class PaymentController extends Controller
                 return back()->withErrors(['error' => $resultado['mensaje']])->withInput();
             }
         } catch (\Exception $e) {
-            return back()->withErrors(['error' => 'Error al procesar el pago: ' . $e->getMessage()])->withInput();
+            logger()->error('Error procesando pago PSE', ['exception' => $e]);
+            return back()->withErrors(['error' => 'Ocurrió un error al procesar el pago. Por favor intenta nuevamente o contacta soporte.'])->withInput();
         }
     }
 
