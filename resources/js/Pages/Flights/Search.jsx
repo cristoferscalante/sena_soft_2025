@@ -26,7 +26,7 @@ export default function Search({ ciudades }) {
         infantes: 0, // Menores de 3 años
     });
     const [errors, setErrors] = useState({});
-    
+
     // Estados para los inputs de ciudades
     const [origenInput, setOrigenInput] = useState('');
     const [destinoInput, setDestinoInput] = useState('');
@@ -34,6 +34,7 @@ export default function Search({ ciudades }) {
     const [showDestinoSuggestions, setShowDestinoSuggestions] = useState(false);
     const [filteredOrigenCiudades, setFilteredOrigenCiudades] = useState([]);
     const [filteredDestinoCiudades, setFilteredDestinoCiudades] = useState([]);
+    const [isDetectingLocation, setIsDetectingLocation] = useState(false);
 
     // Calcular fechas mínimas y máximas
     const today = new Date().toISOString().split('T')[0];
@@ -45,9 +46,9 @@ export default function Search({ ciudades }) {
     const handleOrigenInputChange = (e) => {
         const value = e.target.value;
         setOrigenInput(value);
-        
+
         if (value.length > 0) {
-            const filtered = ciudades.filter(ciudad => 
+            const filtered = ciudades.filter(ciudad =>
                 ciudad.nombre.toLowerCase().includes(value.toLowerCase()) ||
                 ciudad.codigo_iata.toLowerCase().includes(value.toLowerCase())
             );
@@ -64,9 +65,9 @@ export default function Search({ ciudades }) {
     const handleDestinoInputChange = (e) => {
         const value = e.target.value;
         setDestinoInput(value);
-        
+
         if (value.length > 0) {
-            const filtered = ciudades.filter(ciudad => 
+            const filtered = ciudades.filter(ciudad =>
                 ciudad.nombre.toLowerCase().includes(value.toLowerCase()) ||
                 ciudad.codigo_iata.toLowerCase().includes(value.toLowerCase())
             );
@@ -127,6 +128,49 @@ export default function Search({ ciudades }) {
         });
     };
 
+    // Detectar ubicación y pre-cargar destino desde URL
+    useEffect(() => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const destinoParam = urlParams.get('destino');
+        const fromHome = urlParams.get('from_home');
+
+        // Si viene desde Home con un destino seleccionado
+        if (fromHome && destinoParam) {
+            // Buscar la ciudad de destino por código IATA
+            const ciudadDestino = ciudades.find(c => c.codigo_iata === destinoParam);
+            if (ciudadDestino) {
+                setDestinoInput(`${ciudadDestino.nombre} (${ciudadDestino.codigo_iata})`);
+                setFormData(prev => ({ ...prev, destino_id: ciudadDestino.id }));
+            }
+
+            // Detectar ubicación del usuario para el origen
+            const detectLocation = async () => {
+                try {
+                    setIsDetectingLocation(true);
+                    const response = await fetch('https://ipapi.co/json/');
+                    const data = await response.json();
+
+                    // Buscar la ciudad más cercana basada en la ubicación
+                    const userCityName = data.city;
+                    const ciudadOrigen = ciudades.find(c =>
+                        c.nombre.toLowerCase().includes(userCityName.toLowerCase())
+                    );
+
+                    if (ciudadOrigen && ciudadOrigen.id !== ciudadDestino?.id) {
+                        setOrigenInput(`${ciudadOrigen.nombre} (${ciudadOrigen.codigo_iata})`);
+                        setFormData(prev => ({ ...prev, origen_id: ciudadOrigen.id }));
+                    }
+                } catch (error) {
+                    console.error('Error detectando ubicación:', error);
+                } finally {
+                    setIsDetectingLocation(false);
+                }
+            };
+
+            detectLocation();
+        }
+    }, [ciudades]);
+
     // Persistir la cantidad de pasajeros en localStorage para que la vista de selección
     // de asientos pueda leerla si la navegación no incluye explícitamente el valor.
     useEffect(() => {
@@ -174,6 +218,15 @@ export default function Search({ ciudades }) {
                     {/* Search Form */}
                     <div className="max-w-5xl mx-auto">
                         <div className="p-6 bg-white shadow-2xl rounded-2xl md:p-8">
+                            {isDetectingLocation && (
+                                <div className="flex items-center p-3 mb-4 border border-blue-200 rounded-lg bg-blue-50">
+                                    <svg className="w-5 h-5 mr-3 text-blue-600 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    <span className="text-sm font-medium text-blue-800">Detectando tu ubicación...</span>
+                                </div>
+                            )}
                             <form onSubmit={handleSubmit} className="space-y-6">
                                 {/* Tipo de viaje */}
                                 <div className="flex space-x-4">
@@ -227,13 +280,13 @@ export default function Search({ ciudades }) {
                                             autoComplete="off"
                                         />
                                         {showOrigenSuggestions && filteredOrigenCiudades.length > 0 && (
-                                            <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                                            <div className="absolute z-50 w-full mt-1 overflow-y-auto bg-white border border-gray-300 rounded-lg shadow-lg max-h-60">
                                                 {filteredOrigenCiudades.map((ciudad) => (
                                                     <button
                                                         key={ciudad.id}
                                                         type="button"
                                                         onClick={() => selectOrigenCiudad(ciudad)}
-                                                        className="w-full px-4 py-3 text-left hover:bg-primary-50 transition-colors flex items-center justify-between"
+                                                        className="flex items-center justify-between w-full px-4 py-3 text-left transition-colors hover:bg-primary-50"
                                                     >
                                                         <span className="font-medium text-gray-900">{ciudad.nombre}</span>
                                                         <span className="text-sm font-semibold text-primary-600">{ciudad.codigo_iata}</span>
@@ -268,13 +321,13 @@ export default function Search({ ciudades }) {
                                             autoComplete="off"
                                         />
                                         {showDestinoSuggestions && filteredDestinoCiudades.length > 0 && (
-                                            <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                                            <div className="absolute z-50 w-full mt-1 overflow-y-auto bg-white border border-gray-300 rounded-lg shadow-lg max-h-60">
                                                 {filteredDestinoCiudades.map((ciudad) => (
                                                     <button
                                                         key={ciudad.id}
                                                         type="button"
                                                         onClick={() => selectDestinoCiudad(ciudad)}
-                                                        className="w-full px-4 py-3 text-left hover:bg-primary-50 transition-colors flex items-center justify-between"
+                                                        className="flex items-center justify-between w-full px-4 py-3 text-left transition-colors hover:bg-primary-50"
                                                     >
                                                         <span className="font-medium text-gray-900">{ciudad.nombre}</span>
                                                         <span className="text-sm font-semibold text-primary-600">{ciudad.codigo_iata}</span>
@@ -336,14 +389,14 @@ export default function Search({ ciudades }) {
                                 </div>
 
                                 {/* Pasajeros e Infantes en fila */}
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                                     {/* Adultos */}
                                     <div>
                                         <label className="flex items-center block mb-2 text-sm font-semibold text-gray-700">
                                             <UserGroupIcon className="w-5 h-5 mr-2 text-primary-500" />
                                             Adultos
                                         </label>
-                                        <div className="flex items-center justify-center space-x-4 p-4 bg-gray-50 rounded-lg">
+                                        <div className="flex items-center justify-center p-4 space-x-4 rounded-lg bg-gray-50">
                                             <button
                                                 type="button"
                                                 onClick={() => {
@@ -383,7 +436,7 @@ export default function Search({ ciudades }) {
                                             <UserGroupIcon className="w-5 h-5 mr-2 text-primary-500" />
                                             Infantes (&lt; 3 años)
                                         </label>
-                                        <div className="flex items-center justify-center space-x-4 p-4 bg-gray-50 rounded-lg">
+                                        <div className="flex items-center justify-center p-4 space-x-4 rounded-lg bg-gray-50">
                                             <button
                                                 type="button"
                                                 onClick={() => setFormData({ ...formData, infantes: Math.max(0, formData.infantes - 1) })}
@@ -416,7 +469,7 @@ export default function Search({ ciudades }) {
                                 </div>
 
                                 {/* Nota informativa */}
-                                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                                <div className="p-4 border border-blue-200 rounded-lg bg-blue-50">
                                     <p className="text-sm text-blue-800">
                                         <strong>Total de pasajeros:</strong> {formData.pasajeros + formData.infantes} de 5 máximo
                                         <br />

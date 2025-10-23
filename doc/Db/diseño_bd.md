@@ -1,58 +1,76 @@
-# Diseño de Base de Datos – Sistema de Compra de Tiquetes Aéreos
+# Diseño de Base de Datos – AirGuider Sistema de Compra de Tiquetes Aéreos
 
-Documento: versión 1.0  •  Fecha: 2025-10-21
+**Documento:** versión 2.0  
+**Fecha:** 2025-10-23  
+**Proyecto:** SENASOFT 2025  
+**Demo:** [https://airguide.clubgestion.com/](https://airguide.clubgestion.com/)
+
+---
 
 ## 1. Introducción
 
-Este documento describe el diseño completo de la base de datos del sistema de compra de tiquetes aéreos, incluyendo el modelo entidad-relación, esquemas de tablas, índices, restricciones y estrategias de optimización y concurrencia.
+Este documento describe el diseño completo de la base de datos del sistema **AirGuider**, implementado con MySQL 8.0+ y Laravel 12. El diseño garantiza integridad referencial, control de concurrencia optimista y optimización para consultas frecuentes.
+
+### 1.1 Tecnologías Utilizadas
+
+- **DBMS:** MySQL 8.0+
+- **ORM:** Laravel Eloquent
+- **Migraciones:** Laravel Migrations
+- **Seeders:** Laravel Database Seeders
+- **Charset:** utf8mb4 (soporte completo Unicode)
+- **Collation:** utf8mb4_unicode_ci
+
+---
 
 ## 2. Modelo Entidad-Relación (ER)
 
-### 2.1 Diagrama ER
+### 2.1 Diagrama ER Actualizado
 
 ```mermaid
 erDiagram
-    CIUDAD {
-        int id PK
-        string nombre
-        string codigo_iata
+    USERS {
+        bigint id PK
+        string name
+        string email UK
+        timestamp email_verified_at
+        string password
+        string remember_token
+        timestamps
+    }
+    
+    CIUDADES {
+        bigint id PK
+        string ciudad
+        string codigo_iata UK
         string pais
-        timestamp created_at
+        timestamps
     }
     
-    AEROPUERTO {
-        int id PK
-        string codigo
-        string nombre
-        int ciudad_id FK
-        timestamp created_at
-    }
-    
-    MODELO_AERONAVE {
-        int id PK
+    MODELOS_AERONAVE {
+        bigint id PK
         string nombre
         string fabricante
         int capacidad_total
         int filas
         int asientos_por_fila
-        timestamp created_at
+        timestamps
     }
     
-    AERONAVE {
-        int id PK
-        int modelo_id FK
-        string matricula
+    AERONAVES {
+        bigint id PK
+        bigint modelo_id FK
+        string matricula UK
         int anio_fabricacion
         string estado
-        timestamp created_at
+        timestamps
     }
     
-    VUELO {
-        int id PK
-        string codigo_vuelo
-        int origen_ciudad_id FK
-        int destino_ciudad_id FK
-        int aeronave_id FK
+    VUELOS {
+        bigint id PK
+        string codigo UK
+        bigint ciudad_origen_id FK
+        bigint ciudad_destino_id FK
+        bigint aeronave_id FK
         date fecha_salida
         time hora_salida
         date fecha_llegada
@@ -61,56 +79,52 @@ erDiagram
         int capacidad_total
         int asientos_disponibles
         string estado
-        timestamp created_at
-        timestamp updated_at
+        timestamps
     }
     
-    ASIENTO {
-        int id PK
-        int vuelo_id FK
+    ASIENTOS {
+        bigint id PK
+        bigint vuelo_id FK
         string numero
-        string clase
+        string tipo
         string estado
         int version
-        int reserva_id FK
-        timestamp reservado_at
-        timestamp created_at
-        timestamp updated_at
+        timestamp reservado_hasta
+        timestamps
     }
     
-    RESERVA {
-        int id PK
-        string codigo_unico UK
-        int pagador_id FK
-        string estado
-        decimal total
-        int cantidad_pasajeros
-        timestamp fecha_creacion
-        timestamp fecha_expiracion
-        timestamp updated_at
-    }
-    
-    RESERVA_VUELO {
-        int id PK
-        int reserva_id FK
-        int vuelo_id FK
-        string tipo_viaje
-        timestamp created_at
-    }
-    
-    PAGADOR {
-        int id PK
+    PAGADORES {
+        bigint id PK
         string nombre_completo
         string tipo_documento
         string numero_documento
         string correo
         string telefono
-        timestamp created_at
+        timestamps
     }
     
-    PASAJERO {
-        int id PK
-        int reserva_id FK
+    RESERVAS {
+        bigint id PK
+        bigint pagador_id FK
+        string codigo_unico UK
+        string estado
+        decimal total
+        int cantidad_pasajeros
+        timestamp fecha_expiracion
+        timestamps
+    }
+    
+    RESERVAS_VUELOS {
+        bigint id PK
+        bigint reserva_id FK
+        bigint vuelo_id FK
+        string tipo_viaje
+        timestamps
+    }
+    
+    PASAJEROS {
+        bigint id PK
+        bigint reserva_id FK
         string primer_apellido
         string segundo_apellido
         string nombres
@@ -121,109 +135,666 @@ erDiagram
         boolean es_infante
         string celular
         string correo
-        timestamp created_at
+        timestamps
     }
     
-    PASAJERO_ASIENTO {
-        int id PK
-        int pasajero_id FK
-        int asiento_id FK
-        timestamp created_at
+    PASAJEROS_ASIENTOS {
+        bigint id PK
+        bigint pasajero_id FK
+        bigint asiento_id FK
+        timestamps
     }
     
-    PAGO {
-        int id PK
-        int reserva_id FK
+    PAGOS {
+        bigint id PK
+        bigint reserva_id FK
         string metodo_pago
+        decimal subtotal
+        decimal impuestos
+        decimal total
+        string referencia_pago UK
         string estado
-        string referencia
-        decimal monto
-        string datos_pago_json
-        timestamp fecha_pago
-        timestamp created_at
+        text detalles_json
+        timestamps
     }
     
-    TIQUETE {
+    TIQUETES {
+        bigint id PK
+        bigint reserva_id FK
+        bigint pasajero_id FK
+        string codigo_reserva
+        string codigo_qr
+        string estado
+        timestamp fecha_emision
+        timestamps
+    }
+    
+    CACHE {
+        string key PK
+        text value
+        int expiration
+    }
+    
+    CACHE_LOCKS {
+        string key PK
+        string owner
+        int expiration
+    }
+    
+    SESSIONS {
+        string id PK
+        bigint user_id FK
+        string ip_address
+        text user_agent
+        text payload
+        int last_activity
+    }
+    
+    PASSWORD_RESET_TOKENS {
+        string email PK
+        string token
+        timestamp created_at
+    }
+
+    %% Relaciones
+    USERS ||--o{ SESSIONS : "tiene"
+    USERS ||--o{ PASSWORD_RESET_TOKENS : "puede resetear"
+    
+    CIUDADES ||--o{ VUELOS : "origen"
+    CIUDADES ||--o{ VUELOS : "destino"
+    
+    MODELOS_AERONAVE ||--o{ AERONAVES : "tiene"
+    AERONAVES ||--o{ VUELOS : "opera"
+    
+    VUELOS ||--o{ ASIENTOS : "tiene"
+    VUELOS ||--o{ RESERVAS_VUELOS : "incluido en"
+    
+    PAGADORES ||--o{ RESERVAS : "realiza"
+    
+    RESERVAS ||--o{ RESERVAS_VUELOS : "contiene"
+    RESERVAS ||--o{ PASAJEROS : "tiene"
+    RESERVAS ||--|| PAGOS : "tiene"
+    RESERVAS ||--o{ TIQUETES : "genera"
+    
+    PASAJEROS ||--o{ PASAJEROS_ASIENTOS : "asignado a"
+    PASAJEROS ||--o{ TIQUETES : "recibe"
+    
+    ASIENTOS ||--o{ PASAJEROS_ASIENTOS : "ocupado por"
+```
+    
+    PAGADOR {
         int id PK
-        string codigo_tiquete UK
-        int reserva_id FK
-        int pasajero_id FK
-        int vuelo_id FK
-        int asiento_id FK
-        string formato
-        string url_archivo
-        text contenido_json
-        timestamp created_at
-    }
-    
-    CIUDAD ||--o{ AEROPUERTO : "tiene"
-    CIUDAD ||--o{ VUELO : "origen"
-    CIUDAD ||--o{ VUELO : "destino"
-    MODELO_AERONAVE ||--o{ AERONAVE : "es_modelo_de"
-    AERONAVE ||--o{ VUELO : "opera"
-    VUELO ||--o{ ASIENTO : "tiene"
-    VUELO ||--o{ RESERVA_VUELO : "es_reservado_en"
-    VUELO ||--o{ TIQUETE : "emite"
-    RESERVA ||--o{ RESERVA_VUELO : "incluye"
-    RESERVA ||--o{ PASAJERO : "contiene"
-    RESERVA ||--o{ PAGO : "procesa"
-    RESERVA ||--o{ TIQUETE : "genera"
-    PAGADOR ||--o{ RESERVA : "realiza"
-    ASIENTO ||--o| RESERVA : "pertenece_a"
-    ASIENTO ||--o{ PASAJERO_ASIENTO : "asignado_a"
-    ASIENTO ||--o{ TIQUETE : "incluye"
-    PASAJERO ||--o{ PASAJERO_ASIENTO : "tiene"
-    PASAJERO ||--o{ TIQUETE : "posee"
+        string nombre_completo
+        string tipo_documento
+        string numero_documento
 ```
 
-## Diagrama de relaciones (Mermaid)
+### 2.2 Resumen de Tablas
 
-A continuación se incluye un diagrama Mermaid más visual con las relaciones principales entre tablas, para que pueda ser renderizado directamente en Markdown compatible con Mermaid.
+| # | Tabla | Registros (Seeder) | Descripción |
+|---|-------|-------------------|-------------|
+| 1 | **users** | Variable | Usuarios del sistema con autenticación |
+| 2 | **ciudades** | 15 | Ciudades colombianas con códigos IATA |
+| 3 | **modelos_aeronave** | 4 | Modelos de aeronaves (capacidad y configuración) |
+| 4 | **aeronaves** | 8 | Aeronaves de la flota |
+| 5 | **vuelos** | 976 | Vuelos programados (próximos 60 días) |
+| 6 | **asientos** | 125,734 | Asientos generados automáticamente |
+| 7 | **pagadores** | Variable | Compradores de reservas |
+| 8 | **reservas** | Variable | Reservas generadas |
+| 9 | **reservas_vuelos** | Variable | Relación N:M reserva-vuelo |
+| 10 | **pasajeros** | Variable | Pasajeros por reserva (máx. 5) |
+| 11 | **pasajeros_asientos** | Variable | Asignación de asientos a pasajeros |
+| 12 | **pagos** | Variable | Transacciones de pago |
+| 13 | **tiquetes** | Variable | Tiquetes emitidos |
+| 14 | **cache** | Sistema | Caché de Laravel |
+| 15 | **cache_locks** | Sistema | Locks de concurrencia |
+| 16 | **sessions** | Sistema | Sesiones activas |
+| 17 | **password_reset_tokens** | Sistema | Tokens de recuperación |
 
-```mermaid
-graph LR
-        CIUDAD --> AEROPUERTO
-        CIUDAD --> VUELO_ORIGEN["VUELO (origen)"]
-        CIUDAD --> VUELO_DESTINO["VUELO (destino)"]
-        MODELO_AERONAVE --> AERONAVE
-        AERONAVE --> VUELO
-        VUELO --> ASIENTO
-        RESERVA --> RESERVA_VUELO
-        RESERVA --> PASAJERO
-        RESERVA --> PAGO
-        RESERVA --> TIQUETE
-        PAGADOR --> RESERVA
-        ASIENTO --> PASAJERO_ASIENTO
-        PASAJERO --> PASAJERO_ASIENTO
-        ASIENTO --> TIQUETE
-        PASAJERO --> TIQUETE
+---
 
-        subgraph "Entidades Principales"
-            CIUDAD[CIUDAD]
-            AEROPUERTO[AEROPUERTO]
-            MODELO_AERONAVE[MODELO_AERONAVE]
-            AERONAVE[AERONAVE]
-            VUELO[VUELO]
-            ASIENTO[ASIENTO]
-            RESERVA[RESERVA]
-            RESERVA_VUELO[RESERVA_VUELO]
-            PAGADOR[PAGADOR]
-            PASAJERO[PASAJERO]
-            PASAJERO_ASIENTO[PASAJERO_ASIENTO]
-            PAGO[PAGO]
-            TIQUETE[TIQUETE]
-        end
+## 3. Esquemas de Tablas (DDL)
 
-        %% notas de relación
-        CIUDAD ---|"1..*"| AEROPUERTO
-        CIUDAD ---|"1..*"| VUELO_ORIGEN
-        CIUDAD ---|"1..*"| VUELO_DESTINO
-        MODELO_AERONAVE ---|"1..*"| AERONAVE
-        AERONAVE ---|"1..*"| VUELO
-        VUELO ---|"1..*"| ASIENTO
-        RESERVA ---|"1..*"| RESERVA_VUELO
-        RESERVA ---|"1..*"| PASAJERO
-        RESERVA ---|"1..*"| PAGO
+### 3.1 Tabla `users`
+
+**Descripción:** Usuarios del sistema con autenticación Laravel Breeze.
+
+```sql
+CREATE TABLE `users` (
+    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `name` VARCHAR(255) NOT NULL,
+    `email` VARCHAR(255) NOT NULL UNIQUE,
+    `email_verified_at` TIMESTAMP NULL DEFAULT NULL,
+    `password` VARCHAR(255) NOT NULL,
+    `remember_token` VARCHAR(100) NULL DEFAULT NULL,
+    `created_at` TIMESTAMP NULL DEFAULT NULL,
+    `updated_at` TIMESTAMP NULL DEFAULT NULL,
+    INDEX `users_email_index` (`email`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+```
+
+**Campos clave:**
+- `email`: Único, usado para login
+- `password`: Hash bcrypt
+- `remember_token`: Para "recordarme"
+
+---
+
+### 3.2 Tabla `ciudades`
+
+**Descripción:** Ciudades colombianas con códigos IATA para rutas de vuelos.
+
+```sql
+CREATE TABLE `ciudades` (
+    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `ciudad` VARCHAR(100) NOT NULL,
+    `codigo_iata` VARCHAR(3) NOT NULL UNIQUE,
+    `pais` VARCHAR(100) NOT NULL DEFAULT 'Colombia',
+    `created_at` TIMESTAMP NULL DEFAULT NULL,
+    `updated_at` TIMESTAMP NULL DEFAULT NULL,
+    INDEX `ciudades_codigo_iata_index` (`codigo_iata`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+```
+
+**Datos ejemplo:**
+```
+Bogotá    - BOG
+Medellín  - MDE
+Cali      - CLO
+Cartagena - CTG
+```
+
+---
+
+### 3.3 Tabla `modelos_aeronave`
+
+**Descripción:** Modelos de aeronaves con capacidad y configuración de asientos.
+
+```sql
+CREATE TABLE `modelos_aeronave` (
+    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `nombre` VARCHAR(100) NOT NULL,
+    `fabricante` VARCHAR(100) NOT NULL,
+    `capacidad_total` INT NOT NULL,
+    `filas` INT NOT NULL,
+    `asientos_por_fila` INT NOT NULL,
+    `created_at` TIMESTAMP NULL DEFAULT NULL,
+    `updated_at` TIMESTAMP NULL DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+```
+
+**Datos ejemplo:**
+```
+Airbus A320      - 180 asientos (30 filas x 6)
+Boeing 737-800   - 189 asientos (32 filas x 6)
+Embraer E190     - 100 asientos (25 filas x 4)
+ATR 72-600       - 70 asientos (18 filas x 4)
+```
+
+---
+
+### 3.4 Tabla `aeronaves`
+
+**Descripción:** Aeronaves de la flota con matrícula única.
+
+```sql
+CREATE TABLE `aeronaves` (
+    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `modelo_id` BIGINT UNSIGNED NOT NULL,
+    `matricula` VARCHAR(20) NOT NULL UNIQUE,
+    `anio_fabricacion` INT NOT NULL,
+    `estado` ENUM('activa', 'mantenimiento', 'fuera_de_servicio') NOT NULL DEFAULT 'activa',
+    `created_at` TIMESTAMP NULL DEFAULT NULL,
+    `updated_at` TIMESTAMP NULL DEFAULT NULL,
+    FOREIGN KEY (`modelo_id`) REFERENCES `modelos_aeronave`(`id`) ON DELETE RESTRICT,
+    INDEX `aeronaves_modelo_id_index` (`modelo_id`),
+    INDEX `aeronaves_matricula_index` (`matricula`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+```
+
+---
+
+### 3.5 Tabla `vuelos`
+
+**Descripción:** Vuelos programados con origen, destino y aeronave asignada.
+
+```sql
+CREATE TABLE `vuelos` (
+    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `codigo` VARCHAR(10) NOT NULL UNIQUE,
+    `ciudad_origen_id` BIGINT UNSIGNED NOT NULL,
+    `ciudad_destino_id` BIGINT UNSIGNED NOT NULL,
+    `aeronave_id` BIGINT UNSIGNED NOT NULL,
+    `fecha_salida` DATE NOT NULL,
+    `hora_salida` TIME NOT NULL,
+    `fecha_llegada` DATE NOT NULL,
+    `hora_llegada` TIME NOT NULL,
+    `precio_base` DECIMAL(10, 2) NOT NULL,
+    `capacidad_total` INT NOT NULL,
+    `asientos_disponibles` INT NOT NULL,
+    `estado` ENUM('programado', 'abordando', 'en_vuelo', 'aterrizado', 'cancelado') NOT NULL DEFAULT 'programado',
+    `created_at` TIMESTAMP NULL DEFAULT NULL,
+    `updated_at` TIMESTAMP NULL DEFAULT NULL,
+    FOREIGN KEY (`ciudad_origen_id`) REFERENCES `ciudades`(`id`) ON DELETE RESTRICT,
+    FOREIGN KEY (`ciudad_destino_id`) REFERENCES `ciudades`(`id`) ON DELETE RESTRICT,
+    FOREIGN KEY (`aeronave_id`) REFERENCES `aeronaves`(`id`) ON DELETE RESTRICT,
+    INDEX `vuelos_codigo_index` (`codigo`),
+    INDEX `vuelos_origen_destino_fecha_index` (`ciudad_origen_id`, `ciudad_destino_id`, `fecha_salida`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+```
+
+**Índices compuestos:** Optimizan búsquedas por origen, destino y fecha.
+
+---
+
+### 3.6 Tabla `asientos`
+
+**Descripción:** Asientos generados automáticamente para cada vuelo.
+
+```sql
+CREATE TABLE `asientos` (
+    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `vuelo_id` BIGINT UNSIGNED NOT NULL,
+    `numero` VARCHAR(5) NOT NULL,
+    `tipo` ENUM('economica', 'ejecutiva', 'primera_clase') NOT NULL DEFAULT 'economica',
+    `estado` ENUM('disponible', 'reservado', 'emitido') NOT NULL DEFAULT 'disponible',
+    `version` INT NOT NULL DEFAULT 0,
+    `reservado_hasta` TIMESTAMP NULL DEFAULT NULL,
+    `created_at` TIMESTAMP NULL DEFAULT NULL,
+    `updated_at` TIMESTAMP NULL DEFAULT NULL,
+    FOREIGN KEY (`vuelo_id`) REFERENCES `vuelos`(`id`) ON DELETE CASCADE,
+    UNIQUE KEY `asientos_vuelo_numero_unique` (`vuelo_id`, `numero`),
+    INDEX `asientos_vuelo_estado_index` (`vuelo_id`, `estado`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+```
+
+**Control de concurrencia:**
+- `version`: Optimistic locking
+- `reservado_hasta`: Timeout de 5 minutos
+- `estado`: disponible, reservado, emitido
+
+---
+
+### 3.7 Tabla `pagadores`
+
+**Descripción:** Datos de los compradores (pagadores de la reserva).
+
+```sql
+CREATE TABLE `pagadores` (
+    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `nombre_completo` VARCHAR(255) NOT NULL,
+    `tipo_documento` ENUM('CC', 'TI', 'Pasaporte', 'CE') NOT NULL,
+    `numero_documento` VARCHAR(50) NOT NULL,
+    `correo` VARCHAR(255) NOT NULL,
+    `telefono` VARCHAR(20) NOT NULL,
+    `created_at` TIMESTAMP NULL DEFAULT NULL,
+    `updated_at` TIMESTAMP NULL DEFAULT NULL,
+    INDEX `pagadores_correo_index` (`correo`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+```
+
+---
+
+### 3.8 Tabla `reservas`
+
+**Descripción:** Reservas generadas con código único y estado.
+
+```sql
+CREATE TABLE `reservas` (
+    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `pagador_id` BIGINT UNSIGNED NOT NULL,
+    `codigo_unico` VARCHAR(10) NOT NULL UNIQUE,
+    `estado` ENUM('pendiente', 'confirmada', 'cancelada', 'expirada') NOT NULL DEFAULT 'pendiente',
+    `total` DECIMAL(10, 2) NOT NULL,
+    `cantidad_pasajeros` INT NOT NULL,
+    `fecha_expiracion` TIMESTAMP NULL DEFAULT NULL,
+    `created_at` TIMESTAMP NULL DEFAULT NULL,
+    `updated_at` TIMESTAMP NULL DEFAULT NULL,
+    FOREIGN KEY (`pagador_id`) REFERENCES `pagadores`(`id`) ON DELETE RESTRICT,
+    INDEX `reservas_codigo_unico_index` (`codigo_unico`),
+    INDEX `reservas_estado_index` (`estado`),
+    INDEX `reservas_pagador_id_index` (`pagador_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+```
+
+**Código único:** Alfanumérico de 8 caracteres (ej: A30NMTY9).
+
+---
+
+### 3.9 Tabla `reservas_vuelos`
+
+**Descripción:** Relación N:M entre reservas y vuelos (ida y vuelta).
+
+```sql
+CREATE TABLE `reservas_vuelos` (
+    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `reserva_id` BIGINT UNSIGNED NOT NULL,
+    `vuelo_id` BIGINT UNSIGNED NOT NULL,
+    `tipo_viaje` ENUM('ida', 'regreso') NOT NULL,
+    `created_at` TIMESTAMP NULL DEFAULT NULL,
+    `updated_at` TIMESTAMP NULL DEFAULT NULL,
+    FOREIGN KEY (`reserva_id`) REFERENCES `reservas`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`vuelo_id`) REFERENCES `vuelos`(`id`) ON DELETE RESTRICT,
+    INDEX `reservas_vuelos_reserva_id_index` (`reserva_id`),
+    INDEX `reservas_vuelos_vuelo_id_index` (`vuelo_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+```
+
+---
+
+### 3.10 Tabla `pasajeros`
+
+**Descripción:** Pasajeros registrados por reserva (máximo 5).
+
+```sql
+CREATE TABLE `pasajeros` (
+    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `reserva_id` BIGINT UNSIGNED NOT NULL,
+    `primer_apellido` VARCHAR(100) NOT NULL,
+    `segundo_apellido` VARCHAR(100) NULL,
+    `nombres` VARCHAR(100) NOT NULL,
+    `fecha_nacimiento` DATE NOT NULL,
+    `genero` ENUM('masculino', 'femenino', 'otro') NOT NULL,
+    `tipo_documento` ENUM('CC', 'TI', 'Pasaporte', 'CE') NOT NULL,
+    `numero_documento` VARCHAR(50) NOT NULL,
+    `es_infante` BOOLEAN NOT NULL DEFAULT FALSE,
+    `celular` VARCHAR(20) NOT NULL,
+    `correo` VARCHAR(255) NOT NULL,
+    `created_at` TIMESTAMP NULL DEFAULT NULL,
+    `updated_at` TIMESTAMP NULL DEFAULT NULL,
+    FOREIGN KEY (`reserva_id`) REFERENCES `reservas`(`id`) ON DELETE CASCADE,
+    INDEX `pasajeros_reserva_id_index` (`reserva_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+```
+
+**Validación:**
+- `es_infante`: TRUE si edad < 3 años
+
+---
+
+### 3.11 Tabla `pasajeros_asientos`
+
+**Descripción:** Asignación de asientos a pasajeros.
+
+```sql
+CREATE TABLE `pasajeros_asientos` (
+    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `pasajero_id` BIGINT UNSIGNED NOT NULL,
+    `asiento_id` BIGINT UNSIGNED NOT NULL,
+    `created_at` TIMESTAMP NULL DEFAULT NULL,
+    `updated_at` TIMESTAMP NULL DEFAULT NULL,
+    FOREIGN KEY (`pasajero_id`) REFERENCES `pasajeros`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`asiento_id`) REFERENCES `asientos`(`id`) ON DELETE RESTRICT,
+    UNIQUE KEY `pasajeros_asientos_pasajero_asiento_unique` (`pasajero_id`, `asiento_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+```
+
+---
+
+### 3.12 Tabla `pagos`
+
+**Descripción:** Transacciones de pago con referencia única.
+
+```sql
+CREATE TABLE `pagos` (
+    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `reserva_id` BIGINT UNSIGNED NOT NULL,
+    `metodo_pago` ENUM('tarjeta_credito', 'tarjeta_debito', 'pse') NOT NULL,
+    `subtotal` DECIMAL(10, 2) NOT NULL,
+    `impuestos` DECIMAL(10, 2) NOT NULL,
+    `total` DECIMAL(10, 2) NOT NULL,
+    `referencia_pago` VARCHAR(50) NOT NULL UNIQUE,
+    `estado` ENUM('aprobado', 'rechazado', 'pendiente') NOT NULL DEFAULT 'pendiente',
+    `detalles_json` TEXT NULL,
+    `created_at` TIMESTAMP NULL DEFAULT NULL,
+    `updated_at` TIMESTAMP NULL DEFAULT NULL,
+    FOREIGN KEY (`reserva_id`) REFERENCES `reservas`(`id`) ON DELETE RESTRICT,
+    INDEX `pagos_reserva_id_index` (`reserva_id`),
+    INDEX `pagos_referencia_pago_index` (`referencia_pago`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+```
+
+**Impuestos:** 19% IVA sobre el subtotal.
+
+---
+
+### 3.13 Tabla `tiquetes`
+
+**Descripción:** Tiquetes emitidos con código QR.
+
+```sql
+CREATE TABLE `tiquetes` (
+    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `reserva_id` BIGINT UNSIGNED NOT NULL,
+    `pasajero_id` BIGINT UNSIGNED NOT NULL,
+    `codigo_reserva` VARCHAR(10) NOT NULL,
+    `codigo_qr` TEXT NULL,
+    `estado` ENUM('emitido', 'usado', 'cancelado') NOT NULL DEFAULT 'emitido',
+    `fecha_emision` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+    `created_at` TIMESTAMP NULL DEFAULT NULL,
+    `updated_at` TIMESTAMP NULL DEFAULT NULL,
+    FOREIGN KEY (`reserva_id`) REFERENCES `reservas`(`id`) ON DELETE RESTRICT,
+    FOREIGN KEY (`pasajero_id`) REFERENCES `pasajeros`(`id`) ON DELETE RESTRICT,
+    INDEX `tiquetes_reserva_id_index` (`reserva_id`),
+    INDEX `tiquetes_codigo_reserva_index` (`codigo_reserva`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+```
+
+---
+
+### 3.14 Tablas del Sistema Laravel
+
+#### `cache`
+
+```sql
+CREATE TABLE `cache` (
+    `key` VARCHAR(255) NOT NULL PRIMARY KEY,
+    `value` MEDIUMTEXT NOT NULL,
+    `expiration` INT NOT NULL,
+    INDEX `cache_expiration_index` (`expiration`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+```
+
+#### `cache_locks`
+
+```sql
+CREATE TABLE `cache_locks` (
+    `key` VARCHAR(255) NOT NULL PRIMARY KEY,
+    `owner` VARCHAR(255) NOT NULL,
+    `expiration` INT NOT NULL,
+    INDEX `cache_locks_expiration_index` (`expiration`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+```
+
+#### `sessions`
+
+```sql
+CREATE TABLE `sessions` (
+    `id` VARCHAR(255) NOT NULL PRIMARY KEY,
+    `user_id` BIGINT UNSIGNED NULL DEFAULT NULL,
+    `ip_address` VARCHAR(45) NULL DEFAULT NULL,
+    `user_agent` TEXT NULL DEFAULT NULL,
+    `payload` LONGTEXT NOT NULL,
+    `last_activity` INT NOT NULL,
+    INDEX `sessions_user_id_index` (`user_id`),
+    INDEX `sessions_last_activity_index` (`last_activity`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+```
+
+#### `password_reset_tokens`
+
+```sql
+CREATE TABLE `password_reset_tokens` (
+    `email` VARCHAR(255) NOT NULL PRIMARY KEY,
+    `token` VARCHAR(255) NOT NULL,
+    `created_at` TIMESTAMP NULL DEFAULT NULL,
+    INDEX `password_reset_tokens_email_index` (`email`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+```
+
+---
+
+## 4. Índices y Optimizaciones
+
+### 4.1 Índices Principales
+
+| Tabla | Índice | Columnas | Tipo | Propósito |
+|-------|--------|----------|------|-----------|
+| **vuelos** | `vuelos_origen_destino_fecha_index` | `ciudad_origen_id`, `ciudad_destino_id`, `fecha_salida` | COMPOSITE | Búsqueda de vuelos |
+| **asientos** | `asientos_vuelo_estado_index` | `vuelo_id`, `estado` | COMPOSITE | Consulta de asientos disponibles |
+| **reservas** | `reservas_codigo_unico_index` | `codigo_unico` | UNIQUE | Búsqueda rápida por código |
+| **pagos** | `pagos_referencia_pago_index` | `referencia_pago` | UNIQUE | Validación de pagos |
+| **ciudades** | `ciudades_codigo_iata_index` | `codigo_iata` | UNIQUE | Autocompletado |
+
+### 4.2 Foreign Keys con Cascadas
+
+```sql
+-- Ejemplo: Al eliminar una reserva, se eliminan pasajeros y tiquetes
+ALTER TABLE pasajeros ADD CONSTRAINT fk_pasajeros_reserva 
+    FOREIGN KEY (reserva_id) REFERENCES reservas(id) ON DELETE CASCADE;
+
+ALTER TABLE tiquetes ADD CONSTRAINT fk_tiquetes_reserva 
+    FOREIGN KEY (reserva_id) REFERENCES reservas(id) ON DELETE CASCADE;
+```
+
+---
+
+## 5. Control de Concurrencia
+
+### 5.1 Optimistic Locking en Asientos
+
+**Estrategia:** Usar campo `version` para detectar modificaciones concurrentes.
+
+```sql
+-- Actualización con optimistic locking
+UPDATE asientos 
+SET estado = 'reservado', 
+    version = version + 1,
+    reservado_hasta = NOW() + INTERVAL 5 MINUTE
+WHERE id = :asiento_id 
+  AND version = :version_actual
+  AND estado = 'disponible';
+
+-- Si afecta 0 filas, el asiento ya fue reservado por otro usuario
+```
+
+### 5.2 Liberación Automática de Asientos
+
+**Job ejecutado cada minuto:**
+
+```php
+// app/Jobs/ReleaseExpiredSeatsJob.php
+Asiento::where('estado', 'reservado')
+    ->where('reservado_hasta', '<', now())
+    ->update([
+        'estado' => 'disponible',
+        'reservado_hasta' => null
+    ]);
+```
+
+---
+
+## 6. Seeders
+
+### 6.1 Orden de Ejecución
+
+```php
+// database/seeders/DatabaseSeeder.php
+$this->call([
+    CiudadSeeder::class,           // 15 ciudades
+    ModeloAeronaveSeeder::class,   // 4 modelos
+    AeronaveSeeder::class,         // 8 aeronaves
+    VueloSeeder::class,            // 976 vuelos
+    AsientoSeeder::class,          // 125,734 asientos
+]);
+```
+
+### 6.2 Datos de Prueba
+
+```bash
+php artisan migrate:fresh --seed
+```
+
+**Resultado:**
+- ✅ 15 ciudades colombianas
+- ✅ 4 modelos de aeronaves
+- ✅ 8 aeronaves en la flota
+- ✅ 976 vuelos (próximos 60 días)
+- ✅ 125,734 asientos disponibles
+
+---
+
+## 7. Consultas Frecuentes Optimizadas
+
+### 7.1 Búsqueda de Vuelos
+
+```sql
+SELECT v.*, 
+       co.ciudad AS ciudad_origen, co.codigo_iata AS codigo_origen,
+       cd.ciudad AS ciudad_destino, cd.codigo_iata AS codigo_destino,
+       a.matricula, m.nombre AS modelo
+FROM vuelos v
+INNER JOIN ciudades co ON v.ciudad_origen_id = co.id
+INNER JOIN ciudades cd ON v.ciudad_destino_id = cd.id
+INNER JOIN aeronaves a ON v.aeronave_id = a.id
+INNER JOIN modelos_aeronave m ON a.modelo_id = m.id
+WHERE v.ciudad_origen_id = :origen
+  AND v.ciudad_destino_id = :destino
+  AND v.fecha_salida = :fecha
+  AND v.asientos_disponibles > 0
+  AND v.estado = 'programado'
+ORDER BY v.hora_salida ASC;
+```
+
+### 7.2 Historial de Reservas de Usuario
+
+```sql
+SELECT r.*, p.nombre_completo, pa.estado AS pago_estado
+FROM reservas r
+INNER JOIN pagadores p ON r.pagador_id = p.id
+LEFT JOIN pagos pa ON r.id = pa.reserva_id
+WHERE p.correo = :email
+ORDER BY r.created_at DESC;
+```
+
+---
+
+## 8. Backup y Mantenimiento
+
+### 8.1 Backup Diario
+
+```bash
+mysqldump -u usuario -p airguider > backup_$(date +%Y%m%d).sql
+```
+
+### 8.2 Limpieza de Reservas Expiradas
+
+```sql
+DELETE FROM reservas 
+WHERE estado = 'pendiente' 
+  AND fecha_expiracion < NOW();
+```
+
+---
+
+## 9. Conclusiones
+
+El diseño de base de datos implementado garantiza:
+
+- ✅ **Integridad referencial** con foreign keys
+- ✅ **Control de concurrencia** con optimistic locking
+- ✅ **Optimización de consultas** con índices compuestos
+- ✅ **Escalabilidad** con arquitectura normalizada
+- ✅ **Mantenimiento automático** con jobs programados
+
+**Tecnologías:** MySQL 8.0+, Laravel 12, Eloquent ORM
+
+**Demo:** [https://airguide.clubgestion.com/](https://airguide.clubgestion.com/)
+
+---
+
+**Documento actualizado:** 2025-10-23  
+**Versión:** 2.0
         RESERVA ---|"1..*"| TIQUETE
         PAGADOR ---|"1..*"| RESERVA
         ASIENTO ---|"0..1"| PASAJERO_ASIENTO

@@ -18,9 +18,59 @@ class ProfileController extends Controller
      */
     public function edit(Request $request): Response
     {
+        $user = $request->user();
+
+        // Obtener reservas del usuario (basadas en el email del pagador)
+        $reservas = \App\Models\Reserva::with(['vuelos.ciudadOrigen', 'vuelos.ciudadDestino', 'pago', 'pasajeros', 'tiquetes'])
+            ->whereHas('pagador', function($query) use ($user) {
+                $query->where('correo', $user->email);
+            })
+            ->orderBy('created_at', 'desc')
+            ->limit(10)
+            ->get()
+            ->map(function($reserva) {
+                return [
+                    'id' => $reserva->id,
+                    'codigo' => $reserva->codigo_unico,
+                    'estado' => $reserva->estado,
+                    'fecha_reserva' => $reserva->created_at->format('d/m/Y'),
+                    'total' => $reserva->total,
+                    'cantidad_pasajeros' => $reserva->cantidad_adultos + $reserva->cantidad_infantes,
+                    'vuelos' => $reserva->vuelos->map(function($vuelo) {
+                        return [
+                            'codigo' => $vuelo->codigo,
+                            'origen' => $vuelo->ciudadOrigen->nombre . ' (' . $vuelo->ciudadOrigen->codigo_iata . ')',
+                            'destino' => $vuelo->ciudadDestino->nombre . ' (' . $vuelo->ciudadDestino->codigo_iata . ')',
+                            'fecha_salida' => \Carbon\Carbon::parse($vuelo->fecha_salida)->format('d/m/Y'),
+                        ];
+                    }),
+                    'pago' => $reserva->pago ? [
+                        'metodo' => $reserva->pago->metodo_pago,
+                        'estado' => $reserva->pago->estado,
+                        'referencia' => $reserva->pago->referencia_pago,
+                    ] : null,
+                    'tiquetes_count' => $reserva->tiquetes->count(),
+                ];
+            });
+
+        // Estadísticas del usuario
+        $estadisticas = [
+            'total_reservas' => \App\Models\Reserva::whereHas('pagador', function($query) use ($user) {
+                $query->where('correo', $user->email);
+            })->count(),
+            'reservas_confirmadas' => \App\Models\Reserva::whereHas('pagador', function($query) use ($user) {
+                $query->where('correo', $user->email);
+            })->where('estado', 'confirmada')->count(),
+            'total_gastado' => \App\Models\Reserva::whereHas('pagador', function($query) use ($user) {
+                $query->where('correo', $user->email);
+            })->where('estado', 'confirmada')->sum('total'),
+        ];
+
         return Inertia::render('Profile/Edit', [
             'mustVerifyEmail' => $request->user() instanceof MustVerifyEmail,
             'status' => session('status'),
+            'reservas' => $reservas,
+            'estadisticas' => $estadisticas,
         ]);
     }
 

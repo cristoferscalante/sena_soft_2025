@@ -17,10 +17,10 @@ use Inertia\Inertia;
 |--------------------------------------------------------------------------
 */
 
-// Página principal - redirige a búsqueda de vuelos
+// Página principal
 Route::get('/', function () {
-    return redirect()->route('flights.index');
-});
+    return Inertia::render('Home');
+})->name('home');
 
 // Páginas adicionales
 Route::get('/contacto', function () {
