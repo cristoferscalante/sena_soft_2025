@@ -67,8 +67,6 @@ Toda la documentación técnica y de análisis se encuentra en **`doc/`**:
 - **🔗 Inertia.js Server** - Adapter para SSR con React
 - **🗄️ MySQL 8.0+** - Base de datos relacional
 - **📄 DomPDF** - Generación de PDFs para tiquetes y recibos
-- **⚡ Redis** (opcional) - Caché y gestión de colas
-- **📧 Laravel Mail** - Envío de correos electrónicos
 
 ### Frontend
 - **⚛️ React 18+** - Librería UI con hooks y componentes funcionales
@@ -83,7 +81,6 @@ Toda la documentación técnica y de análisis se encuentra en **`doc/`**:
 - **📦 Composer** - Gestor de dependencias PHP
 - **📦 npm** - Gestor de dependencias JavaScript
 - **🧪 PHPUnit** - Testing unitario y de integración
-- **🚀 GitHub Actions** (opcional) - CI/CD
 
 ---
 
