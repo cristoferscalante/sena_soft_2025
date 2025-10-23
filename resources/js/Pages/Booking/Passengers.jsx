@@ -12,7 +12,7 @@ import {
 } from '@heroicons/react/24/outline';
 
 export default function Passengers({ vuelos, asientos, cantidad_pasajeros, cantidad_adultos, cantidad_infantes }) {
-    const { errors: serverErrors } = usePage().props;
+    const { errors: serverErrors, auth } = usePage().props;
     const { showError, showSuccess } = useFormNotifications();
 
     // Calcular si un índice corresponde a un infante
@@ -55,12 +55,24 @@ export default function Passengers({ vuelos, asientos, cantidad_pasajeros, canti
         }))
     );
 
-    const [pagador, setPagador] = useState(cachedData?.pagador || {
-        nombre_completo: '',
-        tipo_documento: 'CC',
-        numero_documento: '',
-        correo: '',
-        telefono: '',
+    // Auto-completar datos del pagador si el usuario está autenticado
+    const [pagador, setPagador] = useState(() => {
+        if (auth?.user && !cachedData?.pagador) {
+            return {
+                nombre_completo: auth.user.name,
+                tipo_documento: 'CC',
+                numero_documento: '',
+                correo: auth.user.email,
+                telefono: '',
+            };
+        }
+        return cachedData?.pagador || {
+            nombre_completo: '',
+            tipo_documento: 'CC',
+            numero_documento: '',
+            correo: '',
+            telefono: '',
+        };
     });
 
     const [terminosAceptados, setTerminosAceptados] = useState(false);
@@ -199,35 +211,35 @@ export default function Passengers({ vuelos, asientos, cantidad_pasajeros, canti
         <MainLayout>
             <Head title="Datos de Pasajeros" />
 
-            <div className="bg-gray-50 min-h-screen py-8">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="min-h-screen py-8 bg-gray-50">
+                <div className="px-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
                     {/* Progress Bar */}
                     <div className="mb-8">
                         <div className="flex items-center justify-center">
                             <div className="flex items-center space-x-4">
                                 <div className="flex items-center">
-                                    <div className="w-10 h-10 bg-green-500 text-white rounded-full flex items-center justify-center font-bold">
+                                    <div className="flex items-center justify-center w-10 h-10 font-bold text-white bg-green-500 rounded-full">
                                         <CheckCircleIcon className="w-5 h-5" />
                                     </div>
                                     <span className="ml-2 text-sm font-medium text-gray-700">Vuelos</span>
                                 </div>
                                 <div className="w-16 h-1 bg-green-500"></div>
                                 <div className="flex items-center">
-                                    <div className="w-10 h-10 bg-green-500 text-white rounded-full flex items-center justify-center font-bold">
+                                    <div className="flex items-center justify-center w-10 h-10 font-bold text-white bg-green-500 rounded-full">
                                         <CheckCircleIcon className="w-5 h-5" />
                                     </div>
                                     <span className="ml-2 text-sm font-medium text-gray-700">Asientos</span>
                                 </div>
                                 <div className="w-16 h-1 bg-primary-500"></div>
                                 <div className="flex items-center">
-                                    <div className="w-10 h-10 bg-primary-500 text-white rounded-full flex items-center justify-center font-bold">
+                                    <div className="flex items-center justify-center w-10 h-10 font-bold text-white rounded-full bg-primary-500">
                                         3
                                     </div>
                                     <span className="ml-2 text-sm font-medium text-primary-700">Pasajeros</span>
                                 </div>
                                 <div className="w-16 h-1 bg-gray-300"></div>
                                 <div className="flex items-center">
-                                    <div className="w-10 h-10 bg-gray-300 text-gray-600 rounded-full flex items-center justify-center font-bold">
+                                    <div className="flex items-center justify-center w-10 h-10 font-bold text-gray-600 bg-gray-300 rounded-full">
                                         4
                                     </div>
                                     <span className="ml-2 text-sm font-medium text-gray-500">Pago</span>
@@ -241,8 +253,8 @@ export default function Passengers({ vuelos, asientos, cantidad_pasajeros, canti
 
                     <form onSubmit={handleSubmit} className="space-y-6">
                         {/* Datos de Pasajeros */}
-                        <div className="bg-white rounded-lg shadow-md p-6">
-                            <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
+                        <div className="p-6 bg-white rounded-lg shadow-md">
+                            <h2 className="flex items-center mb-6 text-2xl font-bold text-gray-900">
                                 <UserGroupIcon className="w-8 h-8 mr-3 text-primary-600" />
                                 Datos de los Pasajeros
                             </h2>
@@ -273,9 +285,9 @@ export default function Passengers({ vuelos, asientos, cantidad_pasajeros, canti
                                             )}
                                         </h3>
 
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                                             <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                <label className="block mb-1 text-sm font-medium text-gray-700">
                                                     Primer Apellido *
                                                 </label>
                                                 <input
@@ -293,7 +305,7 @@ export default function Passengers({ vuelos, asientos, cantidad_pasajeros, canti
                                             </div>
 
                                             <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                <label className="block mb-1 text-sm font-medium text-gray-700">
                                                     Segundo Apellido
                                                 </label>
                                                 <input
@@ -305,7 +317,7 @@ export default function Passengers({ vuelos, asientos, cantidad_pasajeros, canti
                                             </div>
 
                                             <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                <label className="block mb-1 text-sm font-medium text-gray-700">
                                                     Nombres *
                                                 </label>
                                                 <input
@@ -323,7 +335,7 @@ export default function Passengers({ vuelos, asientos, cantidad_pasajeros, canti
                                             </div>
 
                                             <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                <label className="block mb-1 text-sm font-medium text-gray-700">
                                                     Fecha de Nacimiento *
                                                 </label>
                                                 <input
@@ -342,7 +354,7 @@ export default function Passengers({ vuelos, asientos, cantidad_pasajeros, canti
                                             </div>
 
                                             <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                <label className="block mb-1 text-sm font-medium text-gray-700">
                                                     Género *
                                                 </label>
                                                 <select
@@ -364,7 +376,7 @@ export default function Passengers({ vuelos, asientos, cantidad_pasajeros, canti
                                             </div>
 
                                             <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                <label className="block mb-1 text-sm font-medium text-gray-700">
                                                     Tipo de Documento *
                                                 </label>
                                                 <select
@@ -382,7 +394,7 @@ export default function Passengers({ vuelos, asientos, cantidad_pasajeros, canti
                                             </div>
 
                                             <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                <label className="block mb-1 text-sm font-medium text-gray-700">
                                                     Número de Documento *
                                                 </label>
                                                 <input
@@ -400,7 +412,7 @@ export default function Passengers({ vuelos, asientos, cantidad_pasajeros, canti
                                             </div>
 
                                             <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                <label className="block mb-1 text-sm font-medium text-gray-700">
                                                     Celular *
                                                 </label>
                                                 <input
@@ -418,7 +430,7 @@ export default function Passengers({ vuelos, asientos, cantidad_pasajeros, canti
                                             </div>
 
                                             <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                <label className="block mb-1 text-sm font-medium text-gray-700">
                                                     Correo Electrónico *
                                                 </label>
                                                 <input
@@ -438,7 +450,7 @@ export default function Passengers({ vuelos, asientos, cantidad_pasajeros, canti
 
                                         {/* Alerta visual para infantes */}
                                         {esInfanteEsperado && (
-                                            <div className="mt-4 p-4 bg-blue-100 border border-blue-300 rounded-lg">
+                                            <div className="p-4 mt-4 bg-blue-100 border border-blue-300 rounded-lg">
                                                 <div className="flex items-start">
                                                     <svg className="w-5 h-5 text-blue-600 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
                                                         <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
@@ -450,7 +462,7 @@ export default function Passengers({ vuelos, asientos, cantidad_pasajeros, canti
                                                             Viajará en brazos de un adulto.
                                                         </p>
                                                         {!esInfanteActual && pasajero.fecha_nacimiento && (
-                                                            <p className="mt-2 text-sm text-red-600 font-medium">
+                                                            <p className="mt-2 text-sm font-medium text-red-600">
                                                                 ⚠️ La fecha ingresada no corresponde a un infante (menor de 3 años)
                                                             </p>
                                                         )}
@@ -464,15 +476,24 @@ export default function Passengers({ vuelos, asientos, cantidad_pasajeros, canti
                         </div>
 
                         {/* Datos del Pagador */}
-                        <div className="bg-white rounded-lg shadow-md p-6">
-                            <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
+                        <div className="p-6 bg-white rounded-lg shadow-md">
+                            <h2 className="flex items-center mb-6 text-2xl font-bold text-gray-900">
                                 <CreditCardIcon className="w-8 h-8 mr-3 text-primary-600" />
                                 Datos del Pagador
                             </h2>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {auth?.user && (
+                                <div className="flex items-center p-3 mb-4 border border-green-200 rounded-lg bg-green-50">
+                                    <CheckCircleIcon className="w-5 h-5 mr-2 text-green-600" />
+                                    <span className="text-sm text-green-800">
+                                        Tus datos han sido cargados automáticamente desde tu perfil
+                                    </span>
+                                </div>
+                            )}
+
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    <label className="block mb-1 text-sm font-medium text-gray-700">
                                         Nombre Completo *
                                     </label>
                                     <input
@@ -490,7 +511,7 @@ export default function Passengers({ vuelos, asientos, cantidad_pasajeros, canti
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    <label className="block mb-1 text-sm font-medium text-gray-700">
                                         Tipo de Documento *
                                     </label>
                                     <select
@@ -507,7 +528,7 @@ export default function Passengers({ vuelos, asientos, cantidad_pasajeros, canti
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    <label className="block mb-1 text-sm font-medium text-gray-700">
                                         Número de Documento *
                                     </label>
                                     <input
@@ -525,7 +546,7 @@ export default function Passengers({ vuelos, asientos, cantidad_pasajeros, canti
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    <label className="block mb-1 text-sm font-medium text-gray-700">
                                         Correo Electrónico *
                                     </label>
                                     <input
@@ -543,7 +564,7 @@ export default function Passengers({ vuelos, asientos, cantidad_pasajeros, canti
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    <label className="block mb-1 text-sm font-medium text-gray-700">
                                         Teléfono *
                                     </label>
                                     <input
@@ -563,7 +584,7 @@ export default function Passengers({ vuelos, asientos, cantidad_pasajeros, canti
                         </div>
 
                         {/* Términos y Condiciones */}
-                        <div className="bg-white rounded-lg shadow-md p-6">
+                        <div className="p-6 bg-white rounded-lg shadow-md">
                             <div className="flex items-start">
                                 <input
                                     type="checkbox"
@@ -575,7 +596,7 @@ export default function Passengers({ vuelos, asientos, cantidad_pasajeros, canti
                                 />
                                 <label className="ml-3 text-sm text-gray-700">
                                     Acepto los{' '}
-                                    <a href="/terminos-condiciones" target="_blank" className="text-primary-600 hover:text-primary-700 font-medium">
+                                    <a href="/terminos-condiciones" target="_blank" className="font-medium text-primary-600 hover:text-primary-700">
                                         términos y condiciones
                                     </a>
                                     {' '}del servicio *
@@ -590,7 +611,7 @@ export default function Passengers({ vuelos, asientos, cantidad_pasajeros, canti
                         <div className="flex justify-end">
                             <button
                                 type="submit"
-                                className="inline-flex items-center px-8 py-3 bg-primary-600 text-white font-semibold rounded-lg hover:bg-primary-700 transition-colors shadow-lg hover:shadow-xl"
+                                className="inline-flex items-center px-8 py-3 font-semibold text-white transition-colors rounded-lg shadow-lg bg-primary-600 hover:bg-primary-700 hover:shadow-xl"
                             >
                                 Continuar al pago
                                 <ArrowRightIcon className="w-5 h-5 ml-2" />
