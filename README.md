@@ -56,8 +56,7 @@ Toda la documentación técnica y de análisis se encuentra en **`doc/`**:
 | **[`doc/Db/diseño_bd.md`](doc/Db/diseño_bd.md)** | 🗄️ Diseño de base de datos con diagramas ER, DDL y seeders |
 | **[`doc/Diagramas/arquitectura_diagrama.md`](doc/Diagramas/arquitectura_diagrama.md)** | 🏗️ Arquitectura del sistema, componentes y estrategias de concurrencia |
 | **[`doc/Diagramas/diagrama_flujo.md`](doc/Diagramas/diagrama_flujo.md)** | 🔄 Diagramas de flujo de todas las operaciones |
-| **[`doc/ISSUES_V2.md`](doc/ISSUES_V2.md)** | 📝 Issues y tareas del proyecto |
-| **[`doc/GIT_COMMITS_BY_ISSUE.md`](doc/GIT_COMMITS_BY_ISSUE.md)** | 🔀 Historial de commits por issue |
+
 
 ---
 
