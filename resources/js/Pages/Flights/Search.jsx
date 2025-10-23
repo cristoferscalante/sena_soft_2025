@@ -26,12 +26,74 @@ export default function Search({ ciudades }) {
         infantes: 0, // Menores de 3 años
     });
     const [errors, setErrors] = useState({});
+    
+    // Estados para los inputs de ciudades
+    const [origenInput, setOrigenInput] = useState('');
+    const [destinoInput, setDestinoInput] = useState('');
+    const [showOrigenSuggestions, setShowOrigenSuggestions] = useState(false);
+    const [showDestinoSuggestions, setShowDestinoSuggestions] = useState(false);
+    const [filteredOrigenCiudades, setFilteredOrigenCiudades] = useState([]);
+    const [filteredDestinoCiudades, setFilteredDestinoCiudades] = useState([]);
 
     // Calcular fechas mínimas y máximas
     const today = new Date().toISOString().split('T')[0];
     const maxDate = new Date();
     maxDate.setDate(maxDate.getDate() + 60);
     const maxDateStr = maxDate.toISOString().split('T')[0];
+
+    // Filtrar ciudades de origen
+    const handleOrigenInputChange = (e) => {
+        const value = e.target.value;
+        setOrigenInput(value);
+        
+        if (value.length > 0) {
+            const filtered = ciudades.filter(ciudad => 
+                ciudad.nombre.toLowerCase().includes(value.toLowerCase()) ||
+                ciudad.codigo_iata.toLowerCase().includes(value.toLowerCase())
+            );
+            setFilteredOrigenCiudades(filtered);
+            setShowOrigenSuggestions(true);
+        } else {
+            setFilteredOrigenCiudades([]);
+            setShowOrigenSuggestions(false);
+            setFormData({ ...formData, origen_id: '' });
+        }
+    };
+
+    // Filtrar ciudades de destino
+    const handleDestinoInputChange = (e) => {
+        const value = e.target.value;
+        setDestinoInput(value);
+        
+        if (value.length > 0) {
+            const filtered = ciudades.filter(ciudad => 
+                ciudad.nombre.toLowerCase().includes(value.toLowerCase()) ||
+                ciudad.codigo_iata.toLowerCase().includes(value.toLowerCase())
+            );
+            setFilteredDestinoCiudades(filtered);
+            setShowDestinoSuggestions(true);
+        } else {
+            setFilteredDestinoCiudades([]);
+            setShowDestinoSuggestions(false);
+            setFormData({ ...formData, destino_id: '' });
+        }
+    };
+
+    // Seleccionar ciudad de origen
+    const selectOrigenCiudad = (ciudad) => {
+        setOrigenInput(`${ciudad.nombre} (${ciudad.codigo_iata})`);
+        setFormData({ ...formData, origen_id: ciudad.id });
+        setShowOrigenSuggestions(false);
+        setFilteredOrigenCiudades([]);
+    };
+
+    // Seleccionar ciudad de destino
+    const selectDestinoCiudad = (ciudad) => {
+        setDestinoInput(`${ciudad.nombre} (${ciudad.codigo_iata})`);
+        setFormData({ ...formData, destino_id: ciudad.id });
+        setShowDestinoSuggestions(false);
+        setFilteredDestinoCiudades([]);
+    };
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -75,6 +137,21 @@ export default function Search({ ciudades }) {
             // Silent fail (p. ej. en entornos donde localStorage está deshabilitado)
         }
     }, [formData.pasajeros, formData.infantes]);
+
+    // Cerrar sugerencias al hacer clic fuera
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (!event.target.closest('.relative')) {
+                setShowOrigenSuggestions(false);
+                setShowDestinoSuggestions(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, []);
 
     return (
         <MainLayout>
@@ -129,50 +206,82 @@ export default function Search({ ciudades }) {
                                 {/* Ciudades y Fechas */}
                                 <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                                     {/* Desde */}
-                                    <div>
+                                    <div className="relative">
                                         <label className="flex items-center block mb-2 text-sm font-semibold text-gray-700">
                                             <MapPinIcon className="w-5 h-5 mr-2 text-primary-500" />
                                             Desde
                                         </label>
-                                        <select
-                                            value={formData.origen_id}
-                                            onChange={(e) => setFormData({ ...formData, origen_id: e.target.value })}
-                                            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
+                                        <input
+                                            type="text"
+                                            value={origenInput}
+                                            onChange={handleOrigenInputChange}
+                                            onFocus={() => {
+                                                if (origenInput.length > 0) {
+                                                    setShowOrigenSuggestions(true);
+                                                }
+                                            }}
+                                            placeholder="Escribe una ciudad o código IATA"
+                                            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-gray-900 placeholder-gray-500 ${
                                                 errors.origen_id ? 'border-red-500' : 'border-gray-300'
                                             }`}
-                                        >
-                                            <option value="">Selecciona ciudad de origen</option>
-                                            {ciudades.map((ciudad) => (
-                                                <option key={ciudad.id} value={ciudad.id}>
-                                                    {ciudad.nombre} ({ciudad.codigo_iata})
-                                                </option>
-                                            ))}
-                                        </select>
+                                            autoComplete="off"
+                                        />
+                                        {showOrigenSuggestions && filteredOrigenCiudades.length > 0 && (
+                                            <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                                                {filteredOrigenCiudades.map((ciudad) => (
+                                                    <button
+                                                        key={ciudad.id}
+                                                        type="button"
+                                                        onClick={() => selectOrigenCiudad(ciudad)}
+                                                        className="w-full px-4 py-3 text-left hover:bg-primary-50 transition-colors flex items-center justify-between"
+                                                    >
+                                                        <span className="font-medium text-gray-900">{ciudad.nombre}</span>
+                                                        <span className="text-sm font-semibold text-primary-600">{ciudad.codigo_iata}</span>
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
                                         {errors.origen_id && (
                                             <p className="mt-1 text-sm text-red-600">{errors.origen_id}</p>
                                         )}
                                     </div>
 
                                     {/* Hasta */}
-                                    <div>
+                                    <div className="relative">
                                         <label className="flex items-center block mb-2 text-sm font-semibold text-gray-700">
                                             <MapPinIcon className="w-5 h-5 mr-2 text-primary-500" />
                                             Hasta
                                         </label>
-                                        <select
-                                            value={formData.destino_id}
-                                            onChange={(e) => setFormData({ ...formData, destino_id: e.target.value })}
-                                            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
+                                        <input
+                                            type="text"
+                                            value={destinoInput}
+                                            onChange={handleDestinoInputChange}
+                                            onFocus={() => {
+                                                if (destinoInput.length > 0) {
+                                                    setShowDestinoSuggestions(true);
+                                                }
+                                            }}
+                                            placeholder="Escribe una ciudad o código IATA"
+                                            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-gray-900 placeholder-gray-500 ${
                                                 errors.destino_id ? 'border-red-500' : 'border-gray-300'
                                             }`}
-                                        >
-                                            <option value="">Selecciona ciudad de destino</option>
-                                            {ciudades.map((ciudad) => (
-                                                <option key={ciudad.id} value={ciudad.id}>
-                                                    {ciudad.nombre} ({ciudad.codigo_iata})
-                                                </option>
-                                            ))}
-                                        </select>
+                                            autoComplete="off"
+                                        />
+                                        {showDestinoSuggestions && filteredDestinoCiudades.length > 0 && (
+                                            <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                                                {filteredDestinoCiudades.map((ciudad) => (
+                                                    <button
+                                                        key={ciudad.id}
+                                                        type="button"
+                                                        onClick={() => selectDestinoCiudad(ciudad)}
+                                                        className="w-full px-4 py-3 text-left hover:bg-primary-50 transition-colors flex items-center justify-between"
+                                                    >
+                                                        <span className="font-medium text-gray-900">{ciudad.nombre}</span>
+                                                        <span className="text-sm font-semibold text-primary-600">{ciudad.codigo_iata}</span>
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
                                         {errors.destino_id && (
                                             <p className="mt-1 text-sm text-red-600">{errors.destino_id}</p>
                                         )}
